@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JDIH Pengawasan · e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side"><div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/></svg></div><div><b>e-Audit · OPD</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav><div class="foot"><b id="nm">-</b><br><span id="pr"></span></div></aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1>JDIH Pengawasan Pemerintah Daerah Konawe Selatan</h1><p>Kumpulan peraturan yang menjadi dasar pengelolaan keuangan dan pengawasan intern. Klik "Buka PDF" untuk membaca naskah peraturan.</p></div></div>
+    <div id="isi"></div>
+  </main>
+</div>
+<script src="assets/common.js"></script><script src="assets/opd-nav.js"></script><script src="assets/jdih.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id);
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['bendahara', 'ppk', 'pakpa'].includes(ME.peran)) { location.href = '/eaudit.html#jdih'; return }
+  $('nm').textContent = ME.nama; $('pr').textContent = EA.PERAN[ME.peran]; $('crumb').textContent = ME.opd_nama;
+  JDIH.tampil($('isi'), { kelola: false });
+})();
+</script>
+</body>
+</html>

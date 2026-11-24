@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LHA OPD · e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+<style>.lh{padding:16px 18px;margin-bottom:12px}.lh h3{margin:4px 0 2px;font-size:15px}.tm{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 0;border-top:1px solid #F0F3F6;font-size:13px}</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side"><div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg></div><div><b>e-Audit · OPD</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav><div class="foot"><b id="nm">-</b><br><span id="pr"></span></div></aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1>Laporan Hasil Audit</h1><p>LHA Inspektorat yang telah terbit untuk perangkat daerah Anda. Tindak lanjuti rekomendasinya paling lambat 30 hari sejak LHA diterima.</p></div></div>
+    <div id="isi"></div>
+  </main>
+</div>
+<script src="assets/common.js"></script><script src="assets/opd-nav.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), { esc, rp } = EA;
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['bendahara', 'ppk', 'pakpa'].includes(ME.peran)) { location.href = '/'; return }
+  $('nm').textContent = ME.nama; $('pr').textContent = EA.PERAN[ME.peran]; $('crumb').textContent = ME.opd_nama;
+  const [L, T] = await Promise.all([API.get('/api/lhp'), API.get('/api/temuan')]);
+  const STT = { belum: ['Belum ditindaklanjuti', 'p-red'], menunggu: ['Menunggu verifikasi', 'p-amber'], tuntas: ['Tuntas', 'p-green'] };
+  const sisa = l => { const d = new Date(l.tgl); d.setDate(d.getDate() + 30); return Math.ceil((d - new Date()) / 864e5) };
+  $('isi').innerHTML = L.map(l => { const tm = T.filter(t => t.lhp_id === l.id), s = sisa(l), terbuka = tm.filter(t => t.status !== 'tuntas').length;
+    return `<div class="card lh"><span class="pill p-green"><span class="dot"></span>Terbit</span> <span class="kode">Nomor ${esc(l.nomor)} · ${EA.tgl(l.tgl)}</span>
+      <h3>${esc(l.judul)}</h3><div class="hint">${esc(l.periode)} · ${tm.length} temuan · ${terbuka ? `<b style="color:${s < 0 ? 'var(--red)' : 'var(--amber)'}">${terbuka} belum tuntas · ${s < 0 ? 'lewat batas ' + (-s) + ' hari' : 'batas tindak lanjut ' + s + ' hari lagi'}</b>` : '<b style="color:var(--pri)">seluruh temuan tuntas</b>'}</div>
+      <div style="margin-top:10px">${tm.map((t, i) => `<div class="tm"><span>${i + 1}. ${esc(t.judul || t.dok)}${t.nilai_temuan ? ' · ' + rp(t.nilai_temuan) : ''}</span><span class="pill ${STT[t.status][1]}">${STT[t.status][0]}</span></div>`).join('')}</div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px"><a class="btn btn-out" href="/lhp-cetak.html?id=${l.id}" target="_blank" style="text-decoration:none">📄 Baca & cetak LHA</a>${['bendahara', 'pakpa'].includes(ME.peran) && terbuka ? '<a class="btn btn-pri" href="/tindaklanjut.html" style="text-decoration:none">Unggah tindak lanjut</a>' : ''}</div></div>` }).join('')
+    || '<div class="card panel hint" style="text-align:center;padding:40px">Belum ada Laporan Hasil Audit yang terbit untuk OPD Anda.</div>';
+})();
+</script>
+</body>
+</html>

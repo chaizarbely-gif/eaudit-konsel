@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laporan Hasil Audit · Cetak</title>
+<style>
+@page{size:A4;margin:2.4cm 2.4cm 2.6cm 2.3cm}
+*{box-sizing:border-box}
+body{margin:0;background:#E9ECF0;font-family:Arial,Helvetica,sans-serif;font-size:12pt;line-height:1.5;color:#000}
+.alat{position:sticky;top:0;z-index:5;background:#1F2B3A;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;font-family:"Segoe UI",sans-serif;font-size:13px}
+.alat button{border:0;border-radius:7px;padding:7px 14px;font-weight:600;cursor:pointer}.alat .c{background:#2F8F4E;color:#fff}.alat .k{background:#fff;color:#1F2B3A}
+.alat .st{margin-left:auto;background:rgba(255,255,255,.12);border-radius:999px;padding:3px 10px}
+.hal{background:#fff;width:21cm;min-height:29.7cm;margin:18px auto;padding:2.4cm 2.4cm 2.6cm 2.3cm;box-shadow:0 2px 12px rgba(0,0,0,.15);position:relative}
+p{margin:0 0 6pt;text-align:justify}
+.kop{display:grid;grid-template-columns:2.3cm 1fr;align-items:center;border-bottom:3px double #000;padding-bottom:6pt;margin-bottom:12pt}
+.kop img{width:2cm}.kop div{text-align:center;line-height:1.25}.kop b{display:block;font-size:14pt}.kop .k2{font-size:16pt}.kop small{display:block;font-size:10pt}
+table.sp{border-collapse:collapse;width:100%;margin-bottom:10pt}table.sp td{vertical-align:top;padding:0 4pt 2pt 0}
+.ttd{width:8.5cm;margin-left:auto;margin-top:8pt;text-align:left;line-height:1.3}.ttd .nm{margin-top:52pt;font-weight:bold;text-decoration:underline}
+h1{font-size:12pt;text-align:center;margin:0 0 2pt;font-weight:bold}h1+h1{margin-bottom:12pt}
+h2{font-size:12pt;font-weight:bold;margin:12pt 0 4pt}h3{font-size:12pt;font-weight:bold;margin:8pt 0 4pt}
+.ind{padding-left:.75cm}.ind2{padding-left:1.4cm}
+ol,ul{margin:0 0 6pt;padding-left:1.4cm}li{text-align:justify;margin-bottom:2pt}
+.lbl{font-weight:bold;margin:6pt 0 2pt}
+table.t{border-collapse:collapse;width:100%;margin:4pt 0 10pt;font-size:10.5pt;line-height:1.3}table.t td,table.t th{border:1px solid #000;padding:3pt 5pt;vertical-align:top}table.t th{background:#EDEDED;text-align:center}
+.num{text-align:right;white-space:nowrap}
+.pb{page-break-before:always}
+.toc div{display:flex;gap:6pt}.toc .b{font-weight:bold;margin-top:4pt}
+.cap{font-size:10pt;font-style:italic;margin-top:-6pt}
+.wm{position:fixed;top:42%;left:0;right:0;text-align:center;font-size:90pt;font-weight:bold;color:rgba(200,0,0,.08);transform:rotate(-30deg);pointer-events:none;z-index:0}
+.kaki{display:none}
+@media print{body{background:#fff}.alat{display:none}.hal{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}
+}
+</style>
+</head>
+<body>
+<div class="alat"><button class="k" onclick="history.length>1?history.back():close()">← Kembali</button><button class="c" onclick="print()">🖨 Cetak / simpan PDF</button><span id="info"></span><span class="st" id="st"></span></div>
+<div id="doc"><div class="hal">Memuat…</div></div>
+<script src="assets/common.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), e = EA.esc, BLN = EA.BLN;
+  const id = new URLSearchParams(location.search).get('id');
+  let L; try { L = await API.get('/api/lhp/' + id) } catch (x) { $('doc').innerHTML = `<div class="hal">${e(x.message)}</div>`; return }
+  const D = L.data || {}, T = L.temuan || [], opd = L.opd_nama || '';
+  const rp = v => 'Rp' + Math.round(v || 0).toLocaleString('id-ID') + ',00';
+  const tglPanjang = s => { if (!s) return ''; const d = new Date(s); return d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear() };
+  const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'], now = new Date();
+  const nomor = L.nomor || `700.1.2.1/       /${ROM[now.getMonth()]}/${now.getFullYear()}`;
+  const tanggal = L.tgl ? 'Andoolo, ' + tglPanjang(L.tgl) : `Andoolo,       ${BLN[now.getMonth()]} ${now.getFullYear()}`;
+  const par = a => (a || []).filter(Boolean).map(t => `<p>${e(t)}</p>`).join('');
+  const parI = (a, k) => `<div class="${k || 'ind'}">${par(a)}</div>`;
+  const ol = (a, gaya) => (a || []).length ? `<ol style="list-style-type:${gaya || 'decimal'}">${a.map(t => `<li>${e(t)}</li>`).join('')}</ol>` : '';
+  const baris = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
+  const tabel = (rows, kolomAngka) => { if (!rows || !rows.length) return ''; const [h, ...b] = rows;
+    return `<table class="t"><tr>${h.map(x => `<th>${e(x)}</th>`).join('')}</tr>${b.map(r => `<tr>${r.map((x, i) => `<td class="${(kolomAngka || []).includes(i) ? 'num' : ''}">${e(x)}</td>`).join('')}</tr>`).join('')}</table>` };
+  const kop = `<div class="kop"><img src="assets/logo-konsel.png" alt="Logo Kabupaten Konawe Selatan"><div><b>PEMERINTAH KABUPATEN KONAWE SELATAN</b><b class="k2">INSPEKTORAT DAERAH</b>
+    <small>Jl. Poros Andoolo, Komplek Perkantoran Pemda, Kel. Potoro Kec. Andoolo</small><small>Kab. Konawe Selatan Provinsi Sulawesi Tenggara</small><small>Telp. 0811 4002 007 Laman www.konaweselatankab.go.id</small></div></div>`;
+  const ttd = (D.ttd || {});
+  const blokTtd = `<div class="ttd"><b>${e(ttd.jabatan || 'INSPEKTUR DAERAH')},</b><div class="nm">${e(ttd.nama || '')}</div><div>${e(ttd.pangkat || '')}</div><div>NIP ${e(ttd.nip || '')}</div></div>`;
+  // rekomendasi Bab I: isian manual, atau otomatis dari temuan
+  let rekom = D.rekomendasi_umum && D.rekomendasi_umum.length ? D.rekomendasi_umum : [];
+  if (!rekom.length) { T.forEach(t => baris(t.rekomendasi).forEach(r => rekom.push(r.replace(/^(\d+\)|\d+\.|[a-z]\.)\s*/, ''))));
+    if (D.hal_lain && D.hal_lain.length) rekom.push('Menindaklanjuti hal sebagaimana Bab II huruf G;');
+    rekom.push('Menyampaikan bukti tindak lanjut atas rekomendasi kepada Inspektorat Daerah Kabupaten Konawe Selatan paling lambat 30 (tiga puluh) hari kalender sejak Laporan Hasil Audit ini diterima.') }
+  const STT = { tuntas: 'Selesai', menunggu: 'Dalam proses verifikasi', belum: 'Belum ditindaklanjuti' };
+  const temuanHTML = T.map((t, i) => `<h3>${i + 1}.&nbsp;&nbsp;${e(t.judul || t.dok)}</h3><div class="ind">
+     <div class="lbl">Kondisi:</div>${par(baris(t.uraian))}
+     ${t.kriteria ? `<div class="lbl">Kondisi tersebut tidak sesuai dengan:</div>${par(baris(t.kriteria))}` : ''}
+     ${t.sebab ? `<div class="lbl">Hal ini disebabkan oleh:</div>${par(baris(t.sebab))}` : ''}
+     ${t.akibat ? `<div class="lbl">Permasalahan tersebut mengakibatkan:</div>${par(baris(t.akibat))}` : ''}
+     ${t.tanggapan ? `<div class="lbl">Tanggapan Auditi:</div>${par(baris(t.tanggapan))}` : ''}
+     <div class="lbl">Rekomendasi:</div>${par(baris(t.rekomendasi))}</div>`).join('') || '<p class="ind">Tidak terdapat temuan.</p>';
+  const tlHTML = (D.tindak_lanjut && D.tindak_lanjut.length) ? par(D.tindak_lanjut) :
+    (T.length ? `<p>Status tindak lanjut atas temuan hasil audit sampai dengan tanggal laporan ini:</p>` + T.map((t, i) => `<h3>${i + 1}.&nbsp;&nbsp;Tindak Lanjut Temuan Nomor ${i + 1}: ${e(t.judul || t.dok)}</h3><div class="ind"><p>${e(t.tl_uraian || 'Belum ditindaklanjuti.')}</p>${t.verif_catatan ? `<p><i>Catatan Tim Audit: ${e(t.verif_catatan)}</i></p>` : ''}</div>`).join('') : '<p>Tidak terdapat temuan yang memerlukan tindak lanjut.</p>');
+  const adaRekap = (D.tindak_lanjut || []).some(x => /Rekapitulasi Status Tindak Lanjut/i.test(x));
+  const rekapTL = T.length ? (adaRekap ? '' : `<h3>${T.length + 1}.&nbsp;&nbsp;Rekapitulasi Status Tindak Lanjut</h3>`) + tabel([['No.', 'Temuan', 'Rekomendasi', 'Status'], ...T.map((t, i) => [String(i + 1), 'Temuan Nomor ' + (i + 1) + '\n' + (t.judul || t.dok), baris(t.rekomendasi).join(' '), STT[t.status] || t.status])]) : '';
+  const spjL = (L.spj_diperiksa || []).length ? tabel([['No.', 'Kode SPJ', 'Uraian', 'No. BKU / Tanggal', 'Nilai (Rp)'], ...L.spj_diperiksa.map((s, i) => [String(i + 1), s.id, s.uraian, (s.bku || '–') + ' / ' + (s.tgl || '–'), Math.round(s.nilai).toLocaleString('id-ID')])], [4]) : '';
+  const nLamp = []; if (spjL) nLamp.push(['Daftar SPJ yang Diperiksa melalui Aplikasi e-Audit', spjL]); if ((D.lampiran_dokumen || []).length) nLamp.push(['Daftar Dokumen Sumber dan Data Pendukung', tabel(D.lampiran_dokumen)]);
+  const SEC = [['BAB I', 'SIMPULAN DAN REKOMENDASI', ['A. Simpulan', 'B. Rekomendasi']], ['BAB II', 'URAIAN HASIL AUDIT', ['A. Data Umum', 'B. Data Umum Auditi', ...(D.cash_opname && D.cash_opname.length ? ['C. Cash Opname'] : []), 'D. Hasil Audit', 'E. Tanggapan/Komentar Auditi', 'F. Apresiasi', 'G. Hal-hal Lain untuk Perhatian Auditi', 'H. Tindak Lanjut atas Hasil Audit']], ['BAB III', 'PENUTUP', []]];
+  $('doc').innerHTML = `${L.status !== 'terbit' ? `<div class="wm">${L.status === 'draf' ? 'DRAF' : 'BELUM TERBIT'}</div>` : ''}
+  <div class="hal">${kop}
+    <table class="sp"><tr><td style="width:2.3cm"></td><td style="width:.4cm"></td><td></td><td style="width:6cm">${e(tanggal)}</td></tr>
+     <tr><td>Nomor</td><td>:</td><td>${e(nomor)}</td><td></td></tr><tr><td>Lampiran</td><td>:</td><td>-</td><td></td></tr>
+     <tr><td>Perihal</td><td>:</td><td><b>${e(D.perihal || '')}</b></td><td style="padding-left:12pt">Yth. ${e(D.kepada || 'Bupati Konawe Selatan')}<br>di –<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Andoolo</td></tr></table>
+    <div style="padding-left:2.7cm">${par(D.pengantar)}${blokTtd}</div>
+    <div style="margin-top:10pt;line-height:1.3">Tembusan :${ol(D.tembusan)}</div></div>
+  <div class="hal pb"><h1>DAFTAR ISI</h1><div class="toc" style="margin-top:14pt"><div class="b">SURAT PENGANTAR</div><div class="b">DAFTAR ISI</div>
+    ${SEC.map(([b, n, s]) => `<div class="b">${b}&nbsp;&nbsp;&nbsp;${n}</div>${s.map(x => `<div style="padding-left:1.2cm">${x}</div>`).join('')}`).join('')}${nLamp.length ? '<div class="b">LAMPIRAN</div>' : ''}</div></div>
+  <div class="hal pb"><h1>BAB I</h1><h1>SIMPULAN DAN REKOMENDASI</h1>
+    <h2>A.&nbsp;&nbsp;Simpulan</h2>${parI(D.simpulan)}
+    <h2>B.&nbsp;&nbsp;Rekomendasi</h2><div class="ind"><p>${e(D.rekomendasi_pengantar || '')}</p>${ol(rekom)}</div>
+  </div>
+  <div class="hal pb"><h1>BAB II</h1><h1>URAIAN HASIL AUDIT</h1>
+    <h2>A.&nbsp;&nbsp;DATA UMUM</h2>
+    <h3 class="ind">1.&nbsp;&nbsp;Dasar Pemeriksaan</h3><div class="ind">${ol(D.dasar)}</div>
+    <h3 class="ind">2.&nbsp;&nbsp;Tujuan Audit</h3><div class="ind2"><p>${e(D.tujuan_pengantar || '')}</p>${ol(D.tujuan, 'decimal')}</div>
+    <h3 class="ind">3.&nbsp;&nbsp;Ruang Lingkup Audit</h3>${parI(D.ruang_lingkup, 'ind2')}
+    <h3 class="ind">4.&nbsp;&nbsp;Metodologi Audit</h3>${parI(D.metodologi, 'ind2')}
+    <h3 class="ind">5.&nbsp;&nbsp;Waktu Penugasan</h3>${parI(D.waktu, 'ind2')}
+    <h3 class="ind">6.&nbsp;&nbsp;Susunan Tim Audit</h3><div class="ind2">${tabel([['No.', 'Nama', 'Kedudukan Dalam Tim'], ...(D.tim || []).map((t, i) => [String(i + 1), t.nama, t.kedudukan])])}</div>
+    <h2>B.&nbsp;&nbsp;DATA UMUM AUDITI</h2>
+    <h3 class="ind">1.&nbsp;&nbsp;Gambaran Umum Satuan Kerja</h3>${parI(D.gambaran, 'ind2')}<div class="ind2">${tabel(D.pejabat)}</div>
+    <h3 class="ind">2.&nbsp;&nbsp;Anggaran dan Realisasi Belanja</h3>${parI(D.anggaran_teks, 'ind2')}<div class="ind2">${tabel(D.anggaran, [1, 2, 3])}</div>
+    ${D.cash_opname && D.cash_opname.length ? `<h2>C.&nbsp;&nbsp;CASH OPNAME</h2>${parI(D.cash_opname)}` : ''}
+    <h2>D.&nbsp;&nbsp;HASIL AUDIT</h2>${parI(D.hasil_pengantar)}<div class="ind">${temuanHTML}</div>
+    <h2>E.&nbsp;&nbsp;TANGGAPAN/KOMENTAR AUDITI</h2>${parI(D.tanggapan && D.tanggapan.length ? D.tanggapan : ['Auditi menerima hasil audit dan akan menindaklanjuti rekomendasi sesuai batas waktu yang ditetapkan.'])}
+    <h2>F.&nbsp;&nbsp;APRESIASI</h2>${parI(D.apresiasi)}
+    <h2>G.&nbsp;&nbsp;HAL-HAL LAIN UNTUK PERHATIAN AUDITI</h2><div class="ind">${D.hal_lain && D.hal_lain.length ? `<p>${e(D.hal_lain_pengantar || '')}</p>` + D.hal_lain.map((h, i) => `<h3>${i + 1}.&nbsp;&nbsp;${e(h.judul)}</h3><p class="ind">${e(h.uraian)}</p>`).join('') : '<p>Tidak terdapat hal lain yang perlu mendapat perhatian.</p>'}</div>
+    <h2>H.&nbsp;&nbsp;TINDAK LANJUT ATAS HASIL AUDIT</h2><div class="ind">${tlHTML}${rekapTL}</div>
+  </div>
+  <div class="hal pb"><h1>BAB III</h1><h1>PENUTUP</h1>${par(D.penutup)}${blokTtd}</div>
+  ${nLamp.map(([j, isi], i) => `<div class="hal pb"><b>Lampiran ${i + 1}</b><br><b>${e(j)}</b><div style="margin-top:8pt">${isi}</div></div>`).join('')}`;
+  const st = document.createElement('style'); st.textContent = `@page{@bottom-left{content:${JSON.stringify(D.footer || '')};font-family:Arial;font-size:7.5pt;font-style:italic;vertical-align:top;padding-top:6pt;border-top:.5pt solid #000}@bottom-right{content:"Halaman " counter(page);font-family:Arial;font-size:8pt;vertical-align:top;padding-top:6pt;border-top:.5pt solid #000}}`; document.head.appendChild(st);
+  const NAMA = { draf: 'Draf', reviu: 'Menunggu reviu Irban', persetujuan: 'Menunggu persetujuan Inspektur', terbit: 'Terbit' };
+  $('info').textContent = (L.nomor ? 'Nomor ' + L.nomor + ' · ' : '') + opd; $('st').textContent = NAMA[L.status] || L.status;
+  document.title = 'LHA ' + opd + (L.nomor ? ' ' + L.nomor : '');
+})();
+</script>
+</body>
+</html>

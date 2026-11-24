@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Masuk · e-Audit Konawe Selatan</title>
+<style>
+:root{--ink:#1B2533;--muted:#677485;--line:#E3E8EF;--navy:#14284A;--blue:#2563A8;--green:#2F8F4E}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink);min-height:100vh;background:radial-gradient(1100px 600px at 0% -10%,#2a5a8a 0%,transparent 60%),linear-gradient(160deg,#14284A 0%,#173a5c 55%,#1F6F78 100%);display:grid;grid-template-columns:1.1fr 1fr;align-items:center;gap:30px;padding:30px}
+.kiri{color:#fff;max-width:560px;justify-self:end}
+.kiri .lg{width:56px;height:56px;border-radius:15px;background:linear-gradient(135deg,#4F8FD6,#2563A8);display:grid;place-items:center;margin-bottom:18px;box-shadow:0 10px 24px rgba(0,0,0,.25)}
+.kiri h1{margin:0;font-size:34px;letter-spacing:-.4px}.kiri p{color:#C9D8EA;font-size:15px;line-height:1.6}
+.alur{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}.alur span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:5px 12px;font-size:12.5px;color:#DCE7F3}
+.kartu{background:#fff;border-radius:18px;box-shadow:0 22px 50px rgba(0,0,0,.3);padding:28px;max-width:420px;width:100%}
+.kartu h2{margin:0 0 4px;font-size:21px}.kartu .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 4px}
+input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font:inherit;font-size:14px}
+input:focus{outline:2px solid #BFD6F2;border-color:var(--blue)}
+button{width:100%;margin-top:18px;border:0;border-radius:10px;padding:12px;font:inherit;font-weight:700;font-size:14.5px;color:#fff;background:var(--blue);cursor:pointer}
+button:disabled{opacity:.6}
+.err{color:#C8433A;font-size:13px;font-weight:600;margin-top:10px;min-height:18px}
+details{margin-top:16px;font-size:12.5px;color:var(--muted)}summary{cursor:pointer;font-weight:600;color:var(--blue)}
+.akun{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:8px}.akun code{background:#F3F6F9;border-radius:6px;padding:3px 6px;font-size:12px;cursor:pointer}
+@media (max-width:860px){body{grid-template-columns:1fr}.kiri{justify-self:start}}
+</style>
+</head>
+<body>
+<div class="kiri">
+  <div class="lg"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5"/><path d="m7.5 10.5 2 2 3.5-3.5"/></svg></div>
+  <h1>e-Audit Kabupaten Konawe Selatan</h1>
+  <p>Sistem pengawasan terintegrasi Inspektorat Daerah. Bendahara OPD menginput SPJ sekali; PPK dan PA/KPA memverifikasi; Inspektorat langsung memeriksa tanpa berkas fisik.</p>
+  <div class="alur"><span>Input SPJ + Asisten AI</span><span>Verifikasi PPK</span><span>Pengesahan PA/KPA</span><span>Pengawasan bulanan</span><span>LHP & tindak lanjut</span><span>PKPT</span></div>
+</div>
+<form class="kartu" id="f">
+  <h2>Masuk</h2><div class="sub">Gunakan akun yang diberikan administrator.</div>
+  <label for="u">Nama pengguna</label><input id="u" autocomplete="username" required autofocus>
+  <label for="p">Kata sandi</label><input id="p" type="password" autocomplete="current-password" required>
+  <button id="b">Masuk</button>
+  <div class="err" id="e"></div>
+  <details><summary>Daftar nama pengguna (kata sandi tercantum di kartu akun)</summary>
+    <div class="akun">
+      <code data-k>bendahara.pk</code><span>Bendahara · data GU I (sandi di kartu)</span>
+      <code data-k>ppk.pk</code><span>PPK · Bag. Perencanaan (sandi di kartu)</span>
+      <code data-k>pa.pk</code><span>PA/KPA · Bag. Perencanaan (sandi di kartu)</span>
+      <code data-k>bendahara.pupr</code><span>Bendahara · Dinas PUPR (sandi di kartu)</span>
+      <code>ketua.tim1</code><span>Ketua Tim · obrik PUPR, Dinkes</span>
+      <code>ketua.tim4</code><span>Ketua Tim · obrik Bag. Perencanaan</span>
+      <code>auditor1</code><span>Auditor · obrik PUPR, Dinkes, PK</span>
+      <code>irban1</code><span>Inspektur Pembantu</span>
+      <code>inspektur</code><span>Inspektur</span>
+      <code>admin</code><span>Administrator</span>
+    </div>
+  </details>
+</form>
+<form class="kartu" id="fg" style="display:none">
+  <h2>Ganti kata sandi awal</h2><div class="sub">Akun Anda memakai kata sandi awal dari kartu akun. Demi keamanan, buat kata sandi baru sebelum melanjutkan.</div>
+  <div id="gL"><label for="g0">Kata sandi awal (dari kartu)</label><input id="g0" type="password" autocomplete="current-password"></div>
+  <label for="g1">Kata sandi baru (min. 8 karakter)</label><input id="g1" type="password" autocomplete="new-password" required minlength="8">
+  <label for="g2">Ulangi kata sandi baru</label><input id="g2" type="password" autocomplete="new-password" required>
+  <button id="gb">Simpan &amp; lanjutkan</button>
+  <div class="err" id="ge"></div>
+  <button type="button" id="gk" style="background:none;color:var(--muted);margin-top:6px;font-weight:600">Keluar</button>
+</form>
+<script>
+const $=id=>document.getElementById(id);
+document.querySelectorAll('.akun code').forEach(c=>c.onclick=()=>{$('u').value=c.textContent;$('p').value='';$('p').focus()});
+const ke=p=>location.href=p==='bendahara'?'/bendahara.html':(p==='ppk'||p==='pakpa')?'/verifikasi.html':'/eaudit.html';
+let LAMA='',PERAN='';
+function ganti(lama,peran){LAMA=lama;PERAN=peran;$('f').style.display='none';$('fg').style.display='';$('gL').style.display=lama?'none':'';$('g0').required=!lama;(lama?$('g1'):$('g0')).focus()}
+$('gk').onclick=async()=>{try{await fetch('/api/logout',{method:'POST'})}catch(e){}location.href='/login.html'};
+$('fg').onsubmit=async e=>{e.preventDefault();$('ge').textContent='';
+  if($('g1').value!==$('g2').value){$('ge').textContent='Ulangan kata sandi baru tidak sama.';return}
+  $('gb').disabled=true;
+  try{const r=await fetch('/api/password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lama:LAMA||$('g0').value,baru:$('g1').value})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||'Gagal menyimpan');ke(PERAN)}catch(err){$('ge').textContent=err.message;$('gb').disabled=false}};
+$('f').onsubmit=async e=>{e.preventDefault();$('b').disabled=true;$('e').textContent='';
+  try{const r=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:$('u').value,password:$('p').value})});
+    const j=await r.json();if(!r.ok)throw new Error(j.error||'Gagal masuk');
+    if(j.ganti)return ganti($('p').value,j.peran);
+    ke(j.peran);
+  }catch(err){$('e').textContent=err.message;$('b').disabled=false}};
+fetch('/api/me',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(u=>{if(u){if(u.ganti)ganti('',u.peran);else location.href='/'}}).catch(()=>{});
+</script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ringkasan · Portal OPD e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+<style>
+.kp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.kp .card{padding:14px 16px}.kp b{display:block;font-size:24px;margin-top:2px}.kp small{color:var(--muted);font-size:12px}.kp span{font-size:12px;font-weight:600;color:var(--muted)}
+.g2{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin-bottom:12px}
+.it{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #F0F3F6}.it b{font-size:13px}.it small{color:var(--muted);font-size:11.5px;display:block}
+.br{display:flex;align-items:flex-end;gap:8px;height:160px;margin-top:8px}.br div{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.br i{display:block;width:100%;max-width:30px;background:linear-gradient(180deg,var(--pri2),var(--pri));border-radius:5px 5px 0 0}.br small{font-size:10.5px;color:var(--muted)}.br em{font-style:normal;font-size:10.5px;font-weight:700;margin-top:auto}
+@media (max-width:1000px){.kp{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side"><div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div><div><b>e-Audit · OPD</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav><div class="foot"><b id="nm">-</b><br><span id="pr"></span></div></aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1>Ringkasan</h1><p>Keadaan SPJ, temuan, dan laporan hasil audit perangkat daerah Anda.</p></div></div>
+    <section class="kp" id="kp"></section>
+    <section class="g2"><div class="card panel"><h3>Perlu tindakan Anda</h3><div class="hint" id="tHint"></div><div id="tindak"></div></div>
+      <div class="card panel"><h3>SPJ diajukan per bulan</h3><div class="hint">Jumlah SPJ yang telah diajukan bendahara</div><div class="br" id="br"></div></div></section>
+    <section class="g2"><div class="card panel"><h3>Temuan Inspektorat</h3><div class="hint">Status tindak lanjut temuan atas OPD Anda</div><div id="tem"></div></div>
+      <div class="card panel"><h3>Laporan Hasil Audit</h3><div class="hint">LHA yang telah terbit untuk OPD Anda</div><div id="lha"></div></div></section>
+  </main>
+</div>
+<script src="assets/common.js"></script><script src="assets/opd-nav.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), { esc, rp, rpS, ST, BLN } = EA;
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['bendahara', 'ppk', 'pakpa'].includes(ME.peran)) { location.href = '/'; return }
+  $('nm').textContent = ME.nama; $('pr').textContent = EA.PERAN[ME.peran]; $('crumb').textContent = ME.opd_nama;
+  const [S, T, L] = await Promise.all([API.get('/api/spj'), API.get('/api/temuan'), API.get('/api/lhp')]);
+  const by = s => S.filter(p => s.includes(p.st)), jum = a => a.reduce((x, p) => x + p.nilai, 0);
+  const draf = by(['draf', 'kembali']), ver = by(['diajukan', 'ppk']), sah = by(['bendahara', 'dibayar']), tbuka = T.filter(t => t.status !== 'tuntas');
+  $('kp').innerHTML = [['Draf & dikembalikan', draf.length, `${by(['kembali']).length} dikembalikan verifikator`], ['Dalam verifikasi', ver.length, rpS(jum(ver))],
+    ['Disahkan / SP2D', sah.length, rpS(jum(sah))], ['Temuan terbuka', tbuka.length, `${T.filter(t => t.status === 'tuntas').length} sudah tuntas`]]
+    .map(([a, b, c]) => `<div class="card"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  const tugas = ME.peran === 'bendahara' ? [...by(['kembali']).map(p => [p, 'Dikembalikan: ' + (p.catatan || 'perbaiki SPJ'), '/bendahara.html']), ...by(['draf']).slice(0, 8).map(p => [p, 'Lengkapi dokumen lalu ajukan', '/bendahara.html']), ...by(['bendahara']).map(p => [p, 'Catat nomor SP2D', '/bendahara.html'])]
+    : ME.peran === 'ppk' ? by(['diajukan']).map(p => [p, 'Menunggu verifikasi Anda', '/verifikasi.html']) : by(['ppk']).map(p => [p, 'Menunggu pengesahan Anda', '/verifikasi.html']);
+  $('tHint').textContent = tugas.length ? `${tugas.length} pekerjaan` : 'Tidak ada pekerjaan tertunda.';
+  $('tindak').innerHTML = tugas.slice(0, 10).map(([p, t, h]) => `<a class="it" href="${h}" style="text-decoration:none;color:inherit"><div><b>${esc(p.nama.slice(0, 70))}</b><small>${p.id} · ${rp(p.nilai)} · ${esc(t)}</small></div><span class="pill ${ST[p.st][1]}">${ST[p.st][0]}</span></a>`).join('') + (tugas.length > 10 ? `<div class="hint" style="padding-top:8px">… dan ${tugas.length - 10} lainnya</div>` : '');
+  const per = BLN.map((b, i) => S.filter(p => ST[p.st][2] >= 1 && p.m === i + 1).length), mx = Math.max(1, ...per);
+  $('br').innerHTML = per.map((n, i) => `<div><em>${n || ''}</em><i style="height:${n / mx * 120}px"></i><small>${BLN[i].slice(0, 3)}</small></div>`).join('');
+  const STT = { belum: ['Belum ditindaklanjuti', 'p-red'], menunggu: ['Menunggu verifikasi', 'p-amber'], tuntas: ['Tuntas', 'p-green'] };
+  $('tem').innerHTML = T.slice(0, 8).map(t => `<a class="it" href="/tindaklanjut.html" style="text-decoration:none;color:inherit"><div><b>${esc(t.judul || t.dok)}</b><small>${esc((t.uraian || '').slice(0, 90))}</small></div><span class="pill ${STT[t.status][1]}">${STT[t.status][0]}</span></a>`).join('') || '<p class="hint">Belum ada temuan.</p>';
+  $('lha').innerHTML = L.map(l => `<div class="it"><div><b>${esc(l.judul.slice(0, 80))}</b><small>Nomor ${esc(l.nomor)} · ${EA.tgl(l.tgl)} · ${l.n_temuan} temuan</small></div><a class="btn btn-out" href="/lhp-cetak.html?id=${l.id}" target="_blank" style="text-decoration:none">Baca</a></div>`).join('') || '<p class="hint">Belum ada LHA terbit.</p>';
+})();
+</script>
+</body>
+</html>

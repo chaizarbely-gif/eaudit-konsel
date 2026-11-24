@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tindak Lanjut Temuan · e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+<style>
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px;margin:12px 0}.dl dt{color:var(--muted)}.dl dd{margin:0;font-weight:600}
+.kotak{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:#FAFBFC;font-size:13px;margin-bottom:10px}
+.kotak b{display:block;font-size:11px;letter-spacing:.5px;color:var(--muted);margin-bottom:4px}
+.fl{display:flex;flex-direction:column;gap:6px;margin:8px 0}.fl div{display:flex;gap:8px;align-items:center;font-size:12.5px}
+textarea{font:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+      <div><b>e-Audit · OPD</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav>
+    <div class="foot"><b id="nm">-</b><br><span id="op"></span></div>
+  </aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1>Tindak Lanjut Temuan</h1><p>Temuan pengawasan Inspektorat atas SPJ OPD Anda. Uraikan perbaikan dan unggah buktinya; Inspektorat akan memverifikasi.</p></div></div>
+    <div class="layout">
+      <section class="card panel"><h3>Daftar temuan</h3><div class="hint" id="hint"></div><div class="chips" id="chips" style="margin-top:10px"></div><div class="plist" id="plist"></div></section>
+      <section class="card" id="detail"></section>
+    </div>
+  </main>
+</div>
+<input type="file" id="pk" accept=".pdf,.jpg,.jpeg,.png" multiple hidden>
+<div class="toast" id="toast"></div>
+<script src="assets/common.js"></script>
+<script src="assets/opd-nav.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), { esc, rp } = EA;
+  const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 2800) };
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['bendahara', 'pakpa', 'ppk'].includes(ME.peran)) { location.href = '/'; return }
+  $('nm').textContent = ME.nama; $('op').textContent = ME.opd_nama; $('crumb').textContent = ME.opd_nama;
+  const utama = ME.peran === 'bendahara' ? '/bendahara.html' : '/verifikasi.html';
+  const BOLEH = ['bendahara', 'pakpa'].includes(ME.peran);
+  const STT = { belum: ['Belum ditindaklanjuti', 'p-red'], menunggu: ['Menunggu verifikasi', 'p-amber'], tuntas: ['Tuntas', 'p-green'] };
+  let T = await API.get('/api/temuan'), sel = null, unggah = [], chip = T.some(t => t.status === 'belum') ? 'aktif' : 'semua';
+  const CH = [['aktif', 'Perlu tindakan'], ['menunggu', 'Menunggu verifikasi'], ['tuntas', 'Tuntas'], ['semua', 'Semua']];
+  $('chips').innerHTML = CH.map(([k, n]) => `<button class="chip${k === chip ? ' on' : ''}" data-k="${k}">${n}</button>`).join('');
+  document.querySelectorAll('#chips .chip').forEach(c => c.onclick = () => { chip = c.dataset.k; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === c)); daftar() });
+  const saring = () => T.filter(t => chip === 'semua' || (chip === 'aktif' ? t.status === 'belum' : t.status === chip));
+  function daftar() {
+    $('hint').textContent = `${T.filter(t => t.status === 'belum').length} perlu tindakan · ${T.filter(t => t.status === 'menunggu').length} menunggu verifikasi · ${T.filter(t => t.status === 'tuntas').length} tuntas`;
+    const L = saring();
+    $('plist').innerHTML = L.length ? L.map(t => `<div class="pi${t.id === sel ? ' on' : ''}" data-id="${t.id}"><b>${esc(t.dok)}: ${esc(t.uraian)}</b><div class="meta">${t.spj_id} · ${esc((t.spj_uraian || '').slice(0, 60))}</div>
+      <div class="row"><span class="pill ${STT[t.status][1]}"><span class="dot"></span>${STT[t.status][0]}</span></div></div>`).join('') : '<div class="hint" style="padding:18px;text-align:center">Tidak ada temuan.</div>';
+    document.querySelectorAll('.pi').forEach(e => e.onclick = () => { sel = +e.dataset.id; unggah = []; daftar(); detail() });
+  }
+  function detail() {
+    const t = T.find(x => x.id === sel);
+    if (!t) { $('detail').innerHTML = '<div class="panel hint" style="padding:40px;text-align:center">Pilih temuan di daftar.</div>'; return }
+    const bisa = BOLEH && t.status !== 'tuntas';
+    $('detail').innerHTML = `<div class="head"><span class="pill ${STT[t.status][1]}"><span class="dot"></span>${STT[t.status][0]}</span><h2>${esc(t.dok)}</h2>
+      <dl class="dl"><dt>SPJ</dt><dd>${t.spj_id} · ${esc(t.spj_uraian || '')}</dd><dt>Nilai SPJ</dt><dd>${rp(t.nilai)}</dd><dt>Tanggal temuan</dt><dd>${EA.tgl(t.dibuat)}</dd></dl></div>
+      <div class="body">
+        <div class="kotak"><b>URAIAN TEMUAN</b>${esc(t.uraian)}</div>
+        <div class="kotak"><b>REKOMENDASI</b>${esc(t.rekomendasi)}</div>
+        ${t.verif_catatan && t.status === 'belum' ? `<div class="banner b-red" style="margin:0 0 10px">↺ <div><b>Tindak lanjut sebelumnya belum diterima.</b> ${esc(t.verif_catatan)}</div></div>` : ''}
+        ${t.tl_uraian ? `<div class="kotak"><b>TINDAK LANJUT ${t.tl_tgl ? '· ' + EA.tgl(t.tl_tgl) : ''}</b>${esc(t.tl_uraian)}<div class="fl">${(t.tl_files || []).map(f => `<div>📎 ${f.path ? `<a href="${encodeURI(f.path)}" target="_blank">${esc(f.name)}</a>` : esc(f.name)}</div>`).join('')}</div>${t.verif_oleh && t.status === 'tuntas' ? `<div class="hint">Dinyatakan tuntas oleh ${esc(t.verif_oleh)} · ${EA.tgl(t.verif_tgl)}</div>` : ''}</div>` : ''}
+        ${bisa ? `<div class="sect"><span>${t.status === 'menunggu' ? 'PERBARUI TINDAK LANJUT' : 'UNGGAH TINDAK LANJUT'}</span></div>
+          <div class="tf" style="grid-template-columns:1fr"><label>Uraian perbaikan yang dilakukan<textarea id="ur" rows="3">${t.status === 'menunggu' ? esc(t.tl_uraian || '') : ''}</textarea></label></div>
+          <div class="drop" id="dz"><b>Tarik bukti perbaikan ke sini</b> atau klik untuk memilih<br><small>PDF, JPG, PNG · maks. 5 MB</small></div>
+          <div class="fl" id="fl"></div>
+          <div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="btn btn-pri" id="kirim">Kirim ke Inspektorat</button></div>` : ''}
+      </div>`;
+    if (!bisa) return;
+    const gambar = () => { $('fl').innerHTML = unggah.map((f, i) => `<div>📎 ${esc(f.name)} <button class="lnk red" data-h="${i}">Hapus</button></div>`).join(''); document.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { unggah.splice(+b.dataset.h, 1); gambar() }) };
+    const terima = async fs => { for (const f of fs) { if (!/\.(pdf|jpe?g|png)$/i.test(f.name) || f.size > 5 * 1024 * 1024) { toast(f.name + ': format/ukuran tidak sesuai'); continue }
+      try { const r = await fetch(`/api/upload?spj=TL-${t.id}&name=${encodeURIComponent(f.name)}`, { method: 'POST', body: f, headers: { 'Content-Type': f.type || 'application/octet-stream' } }); const j = await r.json(); if (!r.ok) throw new Error(j.error);
+        unggah.push({ name: f.name, path: j.path, size: j.size, type: f.type }); gambar() } catch (e) { toast('Gagal mengunggah: ' + e.message) } } };
+    $('dz').onclick = () => { $('pk').value = ''; $('pk').click() }; $('pk').onchange = e => terima([...e.target.files]);
+    $('dz').ondragover = e => { e.preventDefault(); $('dz').classList.add('over') }; $('dz').ondragleave = () => $('dz').classList.remove('over');
+    $('dz').ondrop = e => { e.preventDefault(); $('dz').classList.remove('over'); terima([...e.dataTransfer.files]) };
+    $('kirim').onclick = async () => {
+      if (!$('ur').value.trim()) return toast('Uraikan tindak lanjut terlebih dahulu');
+      if (!unggah.length && !confirm('Belum ada bukti yang diunggah. Tetap kirim?')) return;
+      try { await API.post(`/api/temuan/${t.id}/tl`, { uraian: $('ur').value, files: unggah }); T = await API.get('/api/temuan'); unggah = []; toast('Tindak lanjut terkirim ke Inspektorat'); daftar(); detail() } catch (e) { toast(e.message) }
+    };
+  }
+  sel = (saring()[0] || T[0] || {}).id || null; daftar(); detail();
+})();
+</script>
+</body>
+</html>

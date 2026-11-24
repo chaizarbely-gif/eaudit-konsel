@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>e-Audit · Inspektorat Daerah Konawe Selatan</title>
+<link rel="stylesheet" href="assets/insp.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side" id="side">
+    <div class="brand"><div class="lg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.5-4.5"/></svg></div>
+      <div><b>e<span>Audit</span></b><small>Inspektorat Daerah Konsel</small></div></div>
+    <nav class="menu" id="menu"></nav>
+  </aside>
+  <div>
+    <header class="topbar">
+      <button class="hb" id="hb">☰</button><span class="title" id="ttl">Dasbor</span><span class="sp"></span>
+      <input id="gsearch" placeholder="Cari SPJ atau OPD…">
+      <span class="user"><span class="av" id="av">A</span><span id="uname"></span><a id="gs" style="cursor:pointer">Ganti sandi</a><a onclick="API.logout()" style="cursor:pointer">Keluar</a></span>
+    </header>
+    <main class="content"><div id="view"><div class="card pad">Memuat…</div></div></main>
+  </div>
+</div>
+<div class="ovl" id="ovl"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<script src="assets/common.js"></script><script src="assets/jdih.js"></script><script src="assets/audit-awal.js"></script>
+<script>
+(async () => {
+const $ = id => document.getElementById(id), { esc, rp, rpS, ST, JENIS, BLN, tgl } = EA;
+const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 2800) };
+const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['auditor', 'ketua', 'irban', 'inspektur', 'admin'].includes(ME.peran)) { location.href = '/'; return }
+EA.init(await API.get('/api/ref')); const { OPD, OPDN } = EA, NOW_M = EA.NOW_M;
+const KELOLA = ['irban', 'inspektur', 'admin'].includes(ME.peran);
+if (ME.lingkup) document.querySelector('.content').insertAdjacentHTML('afterbegin', `<div class="info" style="margin-bottom:12px">🔒 <b>${EA.PERAN[ME.peran]}:</b> Anda hanya melihat obrik yang ditugaskan — ${ME.lingkup.length ? ME.lingkup.map(o => EA.esc(EA.OPDN[o] || o)).join(', ') : '<b>belum ada penugasan</b>. Hubungi Administrator.'}</div>`);
+$('uname').textContent = ME.nama; $('av').textContent = (ME.nama || 'A')[0]; $('hb').onclick = () => $('side').classList.toggle('open');
+
+// ---------------- modal & ikon
+function modal(judul, isi, tombol, ok, lebar) {
+  $('modal').style.maxWidth = (lebar || 620) + 'px';
+  $('modal').innerHTML = `<div class="mh"><h3>${judul}</h3></div><div class="mb">${isi}</div><div class="mf"><button class="btn btn-out" id="mX">${tombol ? 'Batal' : 'Tutup'}</button>${tombol || ''}</div>`;
+  $('ovl').classList.add('on'); $('mX').onclick = tutup; if (ok) $('mY').onclick = ok;
+}
+const tutup = () => $('ovl').classList.remove('on'); $('ovl').onclick = e => { if (e.target === $('ovl')) tutup() };
+$('gs').onclick = () => modal('Ganti kata sandi', `<div class="fm"><label class="w2">Kata sandi lama<input type="password" id="pl"></label><label class="w2">Kata sandi baru (min. 8 karakter)<input type="password" id="pb"></label></div>`,
+  '<button class="btn btn-blue" id="mY">Simpan</button>', async () => { try { await API.post('/api/password', { lama: $('pl').value, baru: $('pb').value }); tutup(); toast('Kata sandi diganti') } catch (e) { toast(e.message) } });
+const IC = { book: '<path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v17H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 21.5A2.5 2.5 0 0 1 6.5 19H20v3H6.5"/><path d="M9 7h7M9 11h5"/>', grid: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  list: '<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>', cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  inbox: '<path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/>', file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>', home: '<path d="m3 11 9-7 9 7"/><path d="M5 10v10h14V10"/>', shield: '<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/>',
+  gift: '<rect x="3" y="8" width="18" height="13" rx="1"/><path d="M12 8v13M3 12h18"/>', chart: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-7"/>', chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  act: '<path d="M3 12h4l3-8 4 16 3-8h4"/>', plane: '<path d="M2 16 22 8l-6 12-3-5z"/><path d="M13 15 22 8"/>', folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/>', clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>' };
+const MENU = [['UTAMA'], ['dasbor', 'Dasbor', 'grid'], ['pkpt', 'PKPT Berbasis Risiko', 'list'], ['agenda', 'Agenda & Surat Tugas', 'cal'],
+  ['PENGAWASAN'], ['pengawasan', 'Pengawasan Bulanan (SPJ)', 'inbox', 'belum'], ['awal', 'Audit Awal Otomatis', 'check'], ['lhp', 'LHP & Tindak Lanjut', 'file', 'tl'], ['m-desa', 'Asistensi Desa', 'home'], ['m-probity', 'Probity Audit', 'shield'],
+  ['PENCEGAHAN'], ['m-mcp', 'MCP KPK', 'shield'], ['m-upg', 'Pengendalian Gratifikasi', 'gift'], ['m-sakip', 'SAKIP', 'chart'], ['m-konsul', 'Konsultasi', 'chat'],
+  ['ADMINISTRASI'], ['m-akt', 'E-Aktivitas', 'act'], ['m-pd', 'Perjalanan Dinas', 'plane'], ['m-arsip', 'Arsip Multimedia', 'folder'], ['REFERENSI'], ['jdih', 'JDIH Pengawasan', 'book'], ...(ME.lingkup ? [] : [['riwayat', 'Riwayat Aktivitas', 'clock']]), ...(ME.peran === 'admin' ? [['pengguna', 'Pengguna & Akses', 'users']] : [])];
+const PH = { 'm-desa': 'Menarik hasil asistensi kecamatan dari SIMPEL DESA dan menerbitkan keterangan kesiapan desa.', 'm-probity': 'Pengawalan real time paket strategis memakai data kontrak dan progres MONALISA.',
+  'm-mcp': 'OPD mengunggah data dukung MCP, Inspektorat memverifikasi sebelum dikirim ke aplikasi KPK.', 'm-upg': 'Pelaporan dan penanganan gratifikasi oleh Unit Pengendalian Gratifikasi.',
+  'm-sakip': 'Evaluasi SAKIP perangkat daerah dengan kertas kerja daring.', 'm-konsul': 'Layanan konsultasi OPD kepada Inspektorat beserta riwayat jawabannya.',
+  'm-akt': 'Catatan aktivitas harian auditor sebagai dasar kinerja.', 'm-pd': 'Pengajuan dan pertanggungjawaban perjalanan dinas pegawai Inspektorat.', 'm-arsip': 'Arsip digital LHP final yang dapat dicari, termasuk untuk permintaan BPK dan APH.' };
+let CNT = { belum: 0, tl: 0 };
+function drawMenu(cur) {
+  $('menu').innerHTML = MENU.map(m => m.length === 1 ? `<div class="g">${m[0]}</div>` :
+    `<a href="#${m[0]}" class="${cur === m[0] ? 'on' : ''}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${IC[m[2]]}</svg>${m[1]}${m[3] && CNT[m[3]] ? `<span class="tag">${CNT[m[3]]}</span>` : ''}${m[0].startsWith('m-') ? '<span style="margin-left:auto;font-size:9.5px;opacity:.55">tahap 2</span>' : ''}</a>`).join('');
+}
+
+// ---------------- data
+let D = { spj: [], audit: {}, temuan: [], agenda: [], ringkas: [] };
+async function muat(...apa) {
+  const peta = { lhp: '/api/lhp', spj: '/api/spj', audit: '/api/audit', temuan: '/api/temuan', agenda: '/api/agenda', ringkas: '/api/ringkas', pkpt: '/api/pkpt', users: '/api/users', log: '/api/log?limit=300' };
+  const hasil = await Promise.all(apa.map(k => API.get(peta[k]))); apa.forEach((k, i) => D[k] = hasil[i]);
+  if (D.spj && D.audit) CNT.belum = D.spj.filter(p => aSt(p) !== 'selesai').length;
+  if (D.temuan) CNT.tl = D.temuan.filter(t => t.status === 'menunggu').length;
+}
+const aSt = p => (D.audit[p.id] || {}).status || 'belum';
+const AST = { belum: ['Belum diperiksa', 'b-red'], proses: ['Sedang diperiksa', 'b-amber'], selesai: ['Selesai', 'b-green'] };
+const nTem = a => a ? Object.values(a.cek || {}).filter(v => v === 't').length : 0;
+const iso = d => new Date(d.getTime() - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+function kpi(ic, bg, c, v, l, href) { return `<${href ? `a href="${href}"` : 'div'} class="card kpi" style="text-decoration:none;color:inherit"><div class="ic" style="background:${bg};color:${c}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[ic]}</svg></div><div><b>${v}</b><span>${l}</span></div></${href ? 'a' : 'div'}>` }
+function berkasLink(f) { return (f.parts || [f]).map(x => x.src ? `<a href="${encodeURI(x.src)}#page=${x.page}" target="_blank">${esc(x.name)} ↗</a>` : x.path ? `<a href="${encodeURI(x.path)}" target="_blank">${esc(x.name)} ↗</a> · ${Math.round(x.size / 1e3)} KB · scan bendahara` : `${esc(x.name)} · ${Math.round((x.size || 0) / 1e3)} KB${x.fake ? ' · contoh' : ''}`).join('<br>') + (f.ocr && f.ocr.dok ? `<br><span style="color:var(--blue)">✨ AI mengenali: ${f.ocr.dok}</span>` : '') }
+
+// ================= DASBOR
+let dayIdx = 0;
+function vDasbor() {
+  const P = D.spj, bl = P.filter(p => aSt(p) !== 'selesai').length, tbuka = D.temuan.filter(t => t.status !== 'tuntas').length;
+  const os = OPD.map(o => { const L = P.filter(p => p.opd === o.k); return { ...o, n: L.length, done: L.filter(p => aSt(p) === 'selesai').length } });
+  const sud = os.filter(o => o.n && o.done === o.n).length, pc = Math.round(sud / OPD.length * 100);
+  const gu = D.ringkas.filter(r => r.sumber === 'gu'), guT = gu.reduce((s, r) => s + r.n, 0), guA = gu.filter(r => ST[r.status] && ST[r.status][2] >= 1).reduce((s, r) => s + r.n, 0);
+  const days = []; const b = new Date(); b.setHours(0, 0, 0, 0); for (let i = 0; i < 7; i++) { const d = new Date(b); d.setDate(b.getDate() + i); days.push(d) }
+  const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'], evs = D.agenda.filter(e => e.tgl === iso(days[dayIdx]));
+  const recent = P.slice().sort((a, b) => (b.tglAju || '').localeCompare(a.tglAju || '')).slice(0, 7);
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth(), start = (new Date(y, m, 1).getDay() + 6) % 7, dim = new Date(y, m + 1, 0).getDate(), ag = new Set(D.agenda.map(e => e.tgl));
+  let cal = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'].map(h => `<div class="h">${h}</div>`).join('') + '<div class="c o"></div>'.repeat(start);
+  for (let d = 1; d <= dim; d++) { const s = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`; cal += `<div class="c ${d === now.getDate() ? 't' : ''}">${d}${ag.has(s) ? '<i></i>' : ''}</div>` }
+  return `${guT ? `<div class="card pad" style="margin-bottom:14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:#F2F8F4;border-color:#BFE0C8">
+     <div style="width:46px;height:46px;border-radius:12px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:22px;flex:none">✓</div>
+     <div style="flex:1;min-width:260px"><b style="font-size:15px">Uji coba: SPJ GU I · Bag. Perencanaan &amp; Keuangan Setda</b><div class="hint" style="font-size:12.5px">${guT} transaksi hasil OCR · <b>${guA}</b> sudah diajukan bendahara dan dapat diperiksa.</div></div>
+     ${guA ? '<span class="btn btn-green" data-opd="PK" style="cursor:pointer">Periksa →</span>' : '<span class="badge b-amber">Menunggu diajukan bendahara</span>'}</div>` : ''}
+   <div class="row r-kpi">${kpi('inbox', '#E4EEF9', 'var(--blue)', P.length, 'SPJ diajukan bendahara OPD', '#pengawasan')}${kpi('check', '#FBE7E5', 'var(--red)', bl, 'Belum selesai diperiksa', '#pengawasan')}
+    ${kpi('file', '#FBF1DC', 'var(--amber)', tbuka, `Temuan terbuka · ${CNT.tl} TL menunggu verifikasi`, '#lhp')}${kpi('grid', '#E3F3E8', 'var(--green)', sud + '/' + OPD.length, 'OPD selesai diawasi')}</div>
+   <div class="row r-main">
+    <div class="card pad"><h2>Agenda Kegiatan</h2><div class="hint">📅 ${tgl(iso(days[dayIdx]))} · <a href="#agenda">kelola agenda</a></div>
+      <div class="days">${days.map((d, i) => { const n = D.agenda.filter(e => e.tgl === iso(d)).length; return `<div class="day ${i === dayIdx ? 'on' : ''}" data-day="${i}"><small>${HARI[d.getDay()]}</small><b>${d.getDate()}</b><span class="n">${'<i></i>'.repeat(Math.min(n, 3))}</span></div>` }).join('')}</div>
+      <div class="ev"><table><thead><tr><th style="width:42%">Acara</th><th>Tempat</th><th>Objek</th><th>Surat</th></tr></thead><tbody>
+      ${evs.length ? evs.map(e => `<tr><td><b>${esc(e.acara)}</b><small>Pukul ${esc(e.jam)} – selesai</small><small>Penanggung jawab: ${esc(e.pj)} · PIC: ${esc(e.pic)}</small></td><td>${esc(e.tempat)}</td><td>${esc(e.objek)}</td><td>${e.no_st ? `<span class="badge b-green" style="cursor:pointer" data-st="${e.id}">ST ${esc(e.no_st.split('/')[1] || '')}</span>` : '–'}</td></tr>`).join('')
+        : '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:22px">Tidak ada agenda pada hari ini.</td></tr>'}</tbody></table></div></div>
+    <div class="card pad"><h2>Hasil Pengawasan Bulanan</h2><div class="hint">📅 Pemeriksaan SPJ · ${BLN[NOW_M - 1]} ${new Date().getFullYear()}</div>
+      <div class="donut" style="background:conic-gradient(var(--blue2) 0 ${pc}%,var(--red) ${pc}% 100%)"><span><div>${pc}%<small>OPD selesai</small></div></span></div>
+      <div class="lg2"><span><i style="background:var(--blue2)"></i>Sudah</span><span><i style="background:var(--red)"></i>Belum</span></div>
+      <div class="opdl">${os.map(o => `<div data-opd="${o.k}"><span>${esc(o.n_ || OPDN[o.k])} <small style="color:var(--muted)">${o.done}/${o.n}</small></span>${o.n && o.done === o.n ? '<span class="badge b-green">✓ Selesai</span>' : o.n ? '<span class="badge b-red">✕ Belum selesai</span>' : '<span class="badge b-grey">Belum ada SPJ</span>'}</div>`).join('')}</div></div></div>
+   <div class="row r-main">
+    <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><h2>SPJ Terbaru dari Bendahara OPD</h2><div class="hint">Ditarik dari portal bendahara · tanpa berkas fisik</div></div><a class="btn btn-out" href="#pengawasan" style="text-decoration:none">Lihat semua</a></div>
+      <div class="tw" style="margin-top:10px"><table class="tbl"><thead><tr><th>SPJ</th><th>OPD</th><th>Diajukan</th><th>Pemeriksaan</th><th></th></tr></thead><tbody>
+      ${recent.map(p => `<tr><td><b>${esc(p.nama)}</b><div class="kode">${p.id} · ${JENIS[p.j].n}</div></td><td>${esc(OPDN[p.opd])}</td><td>${p.tglAju ? tgl(p.tglAju) : BLN[p.m - 1]}</td><td><span class="badge ${AST[aSt(p)][1]}">${AST[aSt(p)][0]}</span></td><td><a class="btn btn-blue" href="#kk/${p.id}" style="text-decoration:none">Periksa</a></td></tr>`).join('') || '<tr><td colspan="5" class="hint" style="padding:18px;text-align:center">Belum ada SPJ diajukan.</td></tr>'}</tbody></table></div></div>
+    <div class="card pad"><h2>Kalender Inspektorat</h2><div class="hint">${BLN[m]} ${y} · titik = ada agenda</div><div class="cal">${cal}</div></div></div>`;
+}
+
+// ================= PENGAWASAN BULANAN
+let F = { opd: 'ALL', st: 'ALL', q: '' };
+function vPengawasan() {
+  let L = D.spj;
+  if (F.opd !== 'ALL') L = L.filter(p => p.opd === F.opd); if (F.st !== 'ALL') L = L.filter(p => aSt(p) === F.st);
+  if (F.q) L = L.filter(p => (p.nama + p.id + OPDN[p.opd] + p.penerima).toLowerCase().includes(F.q));
+  const ord = { belum: 0, proses: 1, selesai: 2 };
+  L = L.slice().sort((a, b) => ((b.nyata ? 1 : 0) - (a.nyata ? 1 : 0)) || (ord[aSt(a)] - ord[aSt(b)]) || (b.tglAju || '').localeCompare(a.tglAju || ''));
+  return `<div class="card pad"><h2>Pengawasan Bulanan SPJ</h2><div class="hint">Post audit atas SPJ yang telah diajukan bendahara OPD.</div>
+   <div class="flt"><select id="fo"><option value="ALL">Semua OPD</option>${OPD.map(o => `<option value="${o.k}" ${F.opd === o.k ? 'selected' : ''}>${esc(o.n)}</option>`).join('')}</select>
+    <select id="fs">${[['ALL', 'Semua status'], ['belum', 'Belum diperiksa'], ['proses', 'Sedang diperiksa'], ['selesai', 'Selesai']].map(([k, n]) => `<option value="${k}" ${F.st === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <input id="fq" placeholder="Cari SPJ…" value="${esc(F.q)}"><span class="hint">${L.length} SPJ</span></div>
+   <div class="info">🔒 Inspektorat hanya membaca dokumen. Perbaikan dilakukan bendahara OPD melalui portalnya.</div>
+   <div class="tw" style="margin-top:10px"><table class="tbl"><thead><tr><th>SPJ</th><th>OPD</th><th>Jenis belanja</th><th>Bulan</th><th class="num">Nilai</th><th>Status SPJ</th><th>Pemeriksaan</th><th>Temuan</th><th></th></tr></thead><tbody>
+   ${L.map(p => { const a = D.audit[p.id]; return `<tr><td><b>${esc(p.nama)}</b><div class="kode">${p.id}${p.tglAju ? ' · diajukan ' + tgl(p.tglAju) : ''}</div></td><td>${esc(OPDN[p.opd])}</td><td>${JENIS[p.j].n}<div class="kode">${EA.MEK[p.mek || 'GU']}</div></td><td>${BLN[p.m - 1].slice(0, 3)}</td><td class="num">${rpS(p.nilai)}</td>
+    <td><span class="badge b-grey">${ST[p.st][0]}</span></td><td><span class="badge ${AST[aSt(p)][1]}">${AST[aSt(p)][0]}</span></td><td>${a && a.status === 'selesai' ? (nTem(a) ? `<span class="badge b-red">${nTem(a)} temuan</span>` : '<span class="badge b-green">Nihil</span>') : '–'}</td>
+    <td><a class="btn ${aSt(p) === 'selesai' ? 'btn-out' : 'btn-blue'}" href="#kk/${p.id}" style="text-decoration:none">${aSt(p) === 'selesai' ? 'Lihat' : 'Kertas kerja'}</a></td></tr>` }).join('') || '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Tidak ada SPJ.</td></tr>'}
+   </tbody></table></div></div>`;
+}
+function bindPengawasan() {
+  $('fo').onchange = e => { F.opd = e.target.value; gambar() }; $('fs').onchange = e => { F.st = e.target.value; gambar() };
+  $('fq').oninput = e => { F.q = e.target.value.toLowerCase(); clearTimeout(window._fq); window._fq = setTimeout(() => { gambar(); const q = $('fq'); q.focus(); q.setSelectionRange(q.value.length, q.value.length) }, 300) };
+}
+
+// ================= KERTAS KERJA
+let KK = null;
+function vKK(id, st) {
+  const p = D.spj.find(x => x.id === id); if (!p) return '<div class="card pad">SPJ tidak ditemukan atau belum diajukan.</div>';
+  const a = st || D.audit[id] || { cek: {}, cat: {}, status: 'belum' }; KK = { p, a: st || JSON.parse(JSON.stringify(a)) }; if (!KK.a.cat) KK.a.cat = {}; if (!KK.a.cek) KK.a.cek = {};
+  const kritis = p.j === 'KON' && p.keu - p.fisik > 10, ro = a.status === 'selesai';
+  return `<div class="card pad"><div class="hint"><a href="#pengawasan">Pengawasan Bulanan</a> › Kertas kerja</div>
+   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="badge ${AST[a.status || 'belum'][1]}">${AST[a.status || 'belum'][0]}</span><span class="kode">${p.id} · diinput bendahara ${esc(OPDN[p.opd])}</span><button class="lnk" id="bRiw">Riwayat SPJ</button></div>
+   <h2 style="margin-top:4px">${esc(p.nama)}</h2><div class="hint">${p.gu ? esc(p.gu) + ' · ' : ''}BKU No. ${esc(p.bku || '–')} · ${esc(p.tgl || '')}${p.penerima ? ' · penerima: ' + esc(p.penerima) : ''}${p.mp ? ' · paket MONALISA: ' + esc(p.mp) : ''}</div>
+   <div class="facts"><div class="fact"><small>PERANGKAT DAERAH</small><b>${esc(OPDN[p.opd])}</b></div><div class="fact"><small>JENIS BELANJA · MEKANISME</small><b>${JENIS[p.j].n}</b><div style="font-size:11.5px;font-weight:700;color:var(--blue)">${EA.MEK[p.mek || 'GU']}</div></div>
+    <div class="fact"><small>NILAI</small><b>${rp(p.nilai)}</b></div><div class="fact"><small>STATUS SPJ</small><b>${ST[p.st][0]}</b></div>
+    <div class="fact"><small>DATA MONALISA</small><b style="${kritis ? 'color:var(--red)' : ''}">${p.fisik != null ? `Fisik ${p.fisik}% · Keu ${p.keu}%` : 'Non-fisik'}</b></div></div>
+   ${kritis ? '<div class="info" style="margin-top:10px;background:#FBE7E5;border-color:#F2C9C3;color:#8E2A22">⚠ Realisasi keuangan melampaui progres fisik lebih dari 10%. Pertimbangkan uji fisik lapangan.</div>' : ''}
+   ${p.aicek ? `<div class="info" style="margin-top:10px">✨ <b>Hasil cek AI saat bendahara mengajukan:</b><br>${p.aicek.map(([s, t]) => (s === 'ok' ? '✓ ' : s === 'warn' ? '⚠ ' : '– ') + esc(t)).join('<br>')}</div>` : ''}
+   <div style="margin-top:14px;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.5px">PENGUJIAN DOKUMEN SPJ</div>
+   <div id="docs">${p.docs.map((d, i) => { const f = (p.files || {})[i], v = KK.a.cek[i] || '';
+     return `<div class="doc"><div class="fn"><div class="pdf">PDF</div><div><b>${i + 1}. ${esc(d.n)}</b><div class="kode">${f ? berkasLink(f) : '<span style="color:var(--red)">tidak ada berkas</span>'}</div></div></div>
+      <div>${v === 't' || KK.a.cat[i] ? `<textarea data-cat="${i}" placeholder="Uraian ketidaksesuaian…" ${ro ? 'disabled' : ''}>${esc(KK.a.cat[i] || '')}</textarea>` : '<span class="hint">' + (v === 's' ? 'Dokumen sesuai.' : 'Belum dinilai.') + '</span>'}</div>
+      <div class="seg"><button class="s ${v === 's' ? 'on' : ''}" data-v="s" data-i="${i}" ${ro ? 'disabled' : ''}>Sesuai</button><button class="t ${v === 't' ? 'on' : ''}" data-v="t" data-i="${i}" ${ro ? 'disabled' : ''}>Tidak sesuai</button></div></div>` }).join('')}</div>
+   <div class="sumbar"><div id="sum"></div><div style="display:flex;gap:8px">${ro ? `<span class="hint">Diperiksa ${esc(a.auditor || '')} · ${a.tgl ? tgl(a.tgl) : ''}</span><button class="btn btn-out" id="reopen">Buka kembali</button>` : '<button class="btn btn-out" id="sv">Simpan</button><button class="btn btn-green" id="fin">Selesai & terbitkan hasil</button>'}</div></div></div>`;
+}
+function bindKK() {
+  if (!KK) return; const c = KK.a.cek, n = KK.p.docs.length, dn = Object.keys(c).length, t = Object.values(c).filter(v => v === 't').length;
+  $('sum').innerHTML = `<b>${dn}/${n}</b> dokumen dinilai · ${t ? `<span class="badge b-red">${t} temuan</span>` : '<span class="badge b-green">tanpa temuan</span>'}`;
+  if ($('fin')) $('fin').disabled = dn < n;
+  document.querySelectorAll('[data-v]').forEach(b => b.onclick = () => { const i = b.dataset.i; KK.a.cek[i] = b.dataset.v; if (b.dataset.v === 's') delete KK.a.cat[i]; $('view').innerHTML = vKK(KK.p.id, KK.a); bindKK() });
+  document.querySelectorAll('[data-cat]').forEach(x => x.oninput = () => { KK.a.cat[x.dataset.cat] = x.value });
+  const simpan = async st => { try { await API.put('/api/audit/' + KK.p.id, { status: st, cek: KK.a.cek, cat: KK.a.cat }); toast(st === 'selesai' ? (t ? `Pemeriksaan selesai · ${t} temuan masuk LHP` : 'Pemeriksaan selesai · tanpa temuan') : 'Kertas kerja disimpan'); if (st === 'selesai') location.hash = '#pengawasan'; else route() } catch (e) { toast(e.message) } };
+  if ($('sv')) $('sv').onclick = () => simpan('proses'); if ($('fin')) $('fin').onclick = () => simpan('selesai');
+  if ($('reopen')) $('reopen').onclick = async () => { KK.a.status = 'proses'; await simpan('proses') };
+  $('bRiw').onclick = async () => { const L = await API.get('/api/spj/' + KK.p.id + '/riwayat'); modal('Riwayat ' + KK.p.id, L.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0F2F5"><b>${esc(r.aksi)}</b><div class="hint">${tgl(r.waktu)} ${r.waktu.slice(11, 16)} · ${esc(r.user)}${r.detail ? ' · ' + esc(r.detail) : ''}</div></div>`).join('') || '<div class="hint">Belum ada riwayat.</div>') };
+}
+
+// ================= LHP & TINDAK LANJUT
+let FT = { st: 'ALL', opd: 'ALL' };
+const TST = { belum: ['Belum ditindaklanjuti', 'b-red'], menunggu: ['Menunggu verifikasi', 'b-amber'], tuntas: ['Tuntas', 'b-green'] };
+function vLHP() {
+  let L = D.temuan;
+  const kepala = tabLHP('tem'); if (FT.st !== 'ALL') L = L.filter(t => t.status === FT.st); if (FT.opd !== 'ALL') L = L.filter(t => t.opd === FT.opd);
+  const per = s => D.temuan.filter(t => t.status === s).length;
+  return kepala + `<div class="row r-kpi">${kpi('file', '#FBE7E5', 'var(--red)', per('belum'), 'Belum ditindaklanjuti')}${kpi('clock', '#FBF1DC', 'var(--amber)', per('menunggu'), 'Menunggu verifikasi Inspektorat')}${kpi('check', '#E3F3E8', 'var(--green)', per('tuntas'), 'Tuntas')}
+   ${kpi('chart', '#E4EEF9', 'var(--blue)', D.temuan.length ? Math.round(per('tuntas') / D.temuan.length * 100) + '%' : '–', 'Persentase penyelesaian')}</div>
+   <div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><h2>Laporan Hasil Pengawasan & Tindak Lanjut</h2><div class="hint">Temuan dari kertas kerja yang selesai; OPD mengunggah tindak lanjut, Inspektorat memverifikasi.</div></div><button class="btn btn-out noprint" onclick="print()">Cetak</button></div>
+   <div class="flt noprint"><select id="ts">${[['ALL', 'Semua status'], ['belum', 'Belum ditindaklanjuti'], ['menunggu', 'Menunggu verifikasi'], ['tuntas', 'Tuntas']].map(([k, n]) => `<option value="${k}" ${FT.st === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <select id="to"><option value="ALL">Semua OPD</option>${OPD.map(o => `<option value="${o.k}" ${FT.opd === o.k ? 'selected' : ''}>${esc(o.n)}</option>`).join('')}</select><span class="hint">${L.length} temuan</span></div>
+   <div class="tw"><table class="tbl"><thead><tr><th>OPD</th><th>SPJ</th><th>Dokumen</th><th>Uraian temuan</th><th>Rekomendasi</th><th>Tindak lanjut</th><th></th></tr></thead><tbody>
+   ${L.map(t => `<tr><td>${esc(OPDN[t.opd])}</td><td>${t.spj_id ? `<a href="#kk/${t.spj_id}">${t.spj_id}</a>` : 'LHA'}<div class="kode">${rpS(t.nilai)}</div></td><td>${esc(t.dok)}</td><td>${t.judul ? '<b>' + esc(t.judul) + '</b><br>' : ''}<span style="font-size:12px">${esc((t.uraian || '').slice(0, 220))}</span></td><td style="font-size:12px">${esc(t.rekomendasi)}</td>
+     <td><span class="badge ${TST[t.status][1]}">${TST[t.status][0]}</span>${t.tl_uraian ? `<div class="kode" style="margin-top:3px">${esc(t.tl_uraian.slice(0, 60))}</div>` : ''}</td>
+     <td class="noprint">${t.status === 'menunggu' ? `<button class="btn btn-blue" data-vtl="${t.id}">Verifikasi</button>` : t.tl_uraian ? `<button class="btn btn-out" data-vtl="${t.id}">Lihat</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--muted)">Belum ada temuan.</td></tr>'}
+   </tbody></table></div></div>`;
+}
+function bindLHP() {
+  $('ts').onchange = e => { FT.st = e.target.value; gambar() }; $('to').onchange = e => { FT.opd = e.target.value; gambar() };
+  document.querySelectorAll('[data-vtl]').forEach(b => b.onclick = () => { const t = D.temuan.find(x => x.id === +b.dataset.vtl), bisa = t.status === 'menunggu';
+    modal('Tindak lanjut temuan', `<div class="hint">${esc(OPDN[t.opd])} · ${t.spj_id} · ${esc(t.dok)}</div><p><b>Temuan:</b> ${esc(t.uraian)}</p><p><b>Tindak lanjut OPD</b> (${esc(t.tl_oleh || '')}, ${tgl(t.tl_tgl)}):<br>${esc(t.tl_uraian || '')}</p>
+      <div>${(t.tl_files || []).map(f => `📎 ${f.path ? `<a href="${encodeURI(f.path)}" target="_blank">${esc(f.name)}</a>` : esc(f.name)}`).join('<br>') || '<span class="hint">Tidak ada bukti dilampirkan.</span>'}</div>
+      ${bisa ? '<div class="fm" style="margin-top:12px"><label class="w2">Catatan verifikasi<textarea id="vc" rows="2"></textarea></label></div>' : `<p class="hint">Status: ${TST[t.status][0]}${t.verif_oleh ? ' · ' + esc(t.verif_oleh) : ''}</p>`}`,
+      bisa ? '<button class="btn btn-red" id="vB">Belum tuntas</button><button class="btn btn-green" id="mY">Nyatakan tuntas</button>' : '', bisa ? () => vtl(t, 'tuntas') : null);
+    if (bisa) $('vB').onclick = () => vtl(t, 'belum') });
+}
+async function vtl(t, h) { if (h === 'belum' && !$('vc').value.trim()) return toast('Tuliskan alasan belum tuntas'); try { await API.post(`/api/temuan/${t.id}/verifikasi`, { hasil: h, catatan: $('vc').value }); tutup(); toast(h === 'tuntas' ? 'Temuan dinyatakan tuntas' : 'Dikembalikan ke OPD'); route() } catch (e) { toast(e.message) } }
+
+// ================= DOKUMEN LHA / LHP
+const LST = { draf: ['Draf', 'b-grey'], reviu: ['Menunggu reviu Irban', 'b-amber'], persetujuan: ['Menunggu persetujuan Inspektur', 'b-blue'], terbit: ['Terbit', 'b-green'] };
+const tabLHP = aktif => `<div class="tab noprint" style="margin-bottom:12px"><button class="${aktif === 'dok' ? 'on' : ''}" onclick="location.hash='#lhp'">Dokumen LHA</button><button class="${aktif === 'tem' ? 'on' : ''}" onclick="location.hash='#lhp/temuan'">Temuan & tindak lanjut</button></div>`;
+const BUAT = ['auditor', 'ketua', 'irban', 'inspektur'].includes(ME.peran);
+function vLHPList() {
+  const L = D.lhp;
+  return tabLHP('dok') + `<div class="row r-kpi">${kpi('file', '#EEF1F5', '#5D6878', L.filter(x => x.status === 'draf').length, 'Draf disusun tim')}${kpi('clock', '#FBF1DC', 'var(--amber)', L.filter(x => x.status === 'reviu').length, 'Menunggu reviu Irban')}
+   ${kpi('check', '#E4EEF9', 'var(--blue)', L.filter(x => x.status === 'persetujuan').length, 'Menunggu persetujuan Inspektur')}${kpi('chart', '#E3F3E8', 'var(--green)', L.filter(x => x.status === 'terbit').length, 'LHA terbit')}</div>
+   <div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><h2>Laporan Hasil Audit</h2><div class="hint">Disusun tim → direviu Inspektur Pembantu → disetujui dan ditandatangani Inspektur → terbit bernomor.</div></div>${BUAT ? '<button class="btn btn-blue" id="lBaru">+ Susun LHA baru</button>' : ''}</div>
+   <div class="tw" style="margin-top:10px"><table class="tbl"><thead><tr><th>Nomor</th><th>Perangkat daerah</th><th>Judul</th><th>Temuan</th><th>Status</th><th>Disusun</th><th></th></tr></thead><tbody>
+   ${L.map(x => `<tr><td class="kode">${esc(x.nomor || '–')}${x.tgl ? '<br>' + tgl(x.tgl) : ''}</td><td>${esc(x.opd_nama)}</td><td><b>${esc(x.judul)}</b><div class="kode">${esc(x.periode)}</div></td><td>${x.n_temuan}</td>
+     <td><span class="badge ${LST[x.status][1]}">${LST[x.status][0]}</span>${x.catatan && x.status === 'draf' ? '<div class="kode" style="color:var(--red)">dikembalikan</div>' : ''}</td><td style="font-size:12px">${esc(x.dibuat_oleh || '')}</td>
+     <td style="white-space:nowrap"><a class="btn btn-blue" href="#lhp/${x.id}" style="text-decoration:none">Buka</a> <a class="btn btn-out" href="/lhp-cetak.html?id=${x.id}" target="_blank" style="text-decoration:none">🖨 Cetak</a></td></tr>`).join('') || '<tr><td colspan="7" class="hint" style="padding:22px;text-align:center">Belum ada LHA.</td></tr>'}</tbody></table></div></div>`;
+}
+function formLHPBaru() {
+  const sisa = o => D.temuan.filter(t => t.opd === o && !t.lhp_id).length;
+  modal('Susun LHA baru', `<div class="fm"><label class="w2">Perangkat daerah (auditi)<select id="n1">${OPD.map(o => `<option value="${o.k}">${esc(o.n)} — ${sisa(o.k)} temuan belum dilaporkan</option>`).join('')}</select></label>
+    <label class="w2">Periode<input id="n2" value="Bulan ${BLN[NOW_M - 1]} Tahun Anggaran ${new Date().getFullYear()}"></label>
+    <label class="w2">Nomor surat tugas<input id="n3" list="stl" placeholder="700.1/…/INSP/2026"><datalist id="stl">${D.agenda.filter(a => a.no_st).map(a => `<option value="${esc(a.no_st)}">${esc(a.acara)}</option>`).join('')}</datalist></label></div>
+    <p class="hint" style="margin-top:10px">Kerangka LHA dibuat otomatis mengikuti format LHA Inspektorat; seluruh temuan OPD yang belum dilaporkan ditarik ke laporan ini.</p>`,
+    '<button class="btn btn-blue" id="mY">Susun</button>', async () => { try { const r = await API.post('/api/lhp', { opd: $('n1').value, periode: $('n2').value, no_st: $('n3').value }); tutup(); location.hash = '#lhp/' + r.id } catch (x) { toast(x.message) } });
+}
+const BAGIAN = [
+  ['Surat pengantar', [['kepada', 'Kepada', 'text'], ['perihal', 'Perihal', 'text'], ['pengantar', 'Isi surat (satu paragraf per baris)', 'list'], ['tembusan', 'Tembusan (satu per baris)', 'list'], ['ttd.nama', 'Penanda tangan', 'text'], ['ttd.pangkat', 'Pangkat/golongan', 'text'], ['ttd.nip', 'NIP', 'text']]],
+  ['Bab I · Simpulan dan rekomendasi', [['simpulan', 'Simpulan (satu paragraf per baris)', 'list'], ['rekomendasi_pengantar', 'Kalimat pengantar rekomendasi', 'text'], ['rekomendasi_umum', 'Butir rekomendasi — kosongkan agar disusun otomatis dari temuan', 'list']]],
+  ['Bab II A · Data umum', [['dasar', 'Dasar pemeriksaan (satu per baris)', 'list'], ['tujuan_pengantar', 'Pengantar tujuan', 'text'], ['tujuan', 'Tujuan audit', 'list'], ['ruang_lingkup', 'Ruang lingkup', 'list'], ['metodologi', 'Metodologi', 'list'], ['waktu', 'Waktu penugasan', 'list'], ['tim', 'Susunan tim (Nama | Kedudukan dalam tim)', 'tim']]],
+  ['Bab II B–C · Data auditi dan cash opname', [['gambaran', 'Gambaran umum satuan kerja', 'list'], ['pejabat', 'Tabel pejabat/pengelola (kolom dipisah | , baris pertama = judul kolom)', 'table'], ['anggaran_teks', 'Uraian anggaran dan realisasi', 'list'], ['anggaran', 'Tabel anggaran (kolom dipisah | )', 'table'], ['cash_opname', 'Cash opname (kosongkan bila tidak ada)', 'list']]],
+  ['Bab II D–H · Hasil audit, tanggapan, tindak lanjut', [['hasil_pengantar', 'Pengantar hasil audit', 'list'], ['tanggapan', 'Tanggapan/komentar auditi', 'list'], ['apresiasi', 'Apresiasi', 'list'], ['hal_lain_pengantar', 'Pengantar hal-hal lain', 'text'], ['hal_lain', 'Hal-hal lain (Judul | Uraian, satu per baris)', 'hal'], ['tindak_lanjut', 'Uraian tindak lanjut — kosongkan agar disusun otomatis dari status temuan', 'list']]],
+  ['Bab III · Penutup dan lampiran', [['penutup', 'Penutup', 'list'], ['lampiran_dokumen', 'Daftar dokumen sumber (kolom dipisah | )', 'table'], ['footer', 'Teks kaki halaman', 'text']]]];
+const ambil = (o, k) => k.split('.').reduce((a, x) => (a || {})[x], o);
+const taruh = (o, k, v) => { const ks = k.split('.'); let a = o; ks.slice(0, -1).forEach(x => { a[x] = a[x] || {}; a = a[x] }); a[ks[ks.length - 1]] = v };
+function keTeks(v, j) { if (j === 'list') return (v || []).join('\n'); if (j === 'table') return (v || []).map(r => r.join(' | ')).join('\n'); if (j === 'tim') return (v || []).map(t => t.nama + ' | ' + t.kedudukan).join('\n'); if (j === 'hal') return (v || []).map(h => h.judul + ' | ' + h.uraian).join('\n'); return v || '' }
+function dariTeks(t, j) { const b = t.split('\n').map(x => x.trim()).filter(Boolean), kol = x => x.split('|').map(y => y.trim());
+  if (j === 'list') return b; if (j === 'table') return b.map(kol); if (j === 'tim') return b.map(kol).map(x => ({ nama: x[0], kedudukan: x[1] || 'Anggota' })); if (j === 'hal') return b.map(kol).map(x => ({ judul: x[0], uraian: x[1] || '' })); return t.trim() }
+let LH = null;
+function vLHPEdit() {
+  const L = LH, D2 = L.data, ed = L.status === 'draf', TS = { tuntas: ['Tuntas', 'b-green'], menunggu: ['Menunggu verifikasi', 'b-amber'], belum: ['Belum ditindaklanjuti', 'b-red'] };
+  const aksi = [];
+  if (ed && BUAT) aksi.push('<button class="btn btn-out" id="lSimpan">Simpan</button>', '<button class="btn btn-blue" id="lAju">Ajukan untuk reviu</button>', '<button class="btn btn-red" id="lHapus">Hapus draf</button>');
+  if (L.status === 'reviu' && ['irban', 'inspektur'].includes(ME.peran)) aksi.push('<button class="btn btn-red" id="lKem">Kembalikan</button>', '<button class="btn btn-green" id="lSet">Setujui reviu → Inspektur</button>');
+  if (L.status === 'persetujuan' && ME.peran === 'inspektur') aksi.push('<button class="btn btn-red" id="lKem">Kembalikan</button>', '<button class="btn btn-green" id="lSet">Setujui & terbitkan</button>');
+  return tabLHP('dok') + `<div class="card pad" style="margin-bottom:14px"><div class="hint"><a href="#lhp">Dokumen LHA</a> › ${esc(L.opd_nama)}</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px"><span class="badge ${LST[L.status][1]}">${LST[L.status][0]}</span>${L.nomor ? `<span class="kode">Nomor ${esc(L.nomor)} · ${tgl(L.tgl)}</span>` : ''}<button class="lnk" id="lRiw">Riwayat</button></div>
+    <div class="fm" style="margin-top:8px"><label class="w2">Judul audit<input id="lJudul" value="${esc(L.judul)}" ${ed ? '' : 'disabled'}></label><label class="w2">Periode<input id="lPer" value="${esc(L.periode)}" ${ed ? '' : 'disabled'}></label></div>
+    ${L.catatan && ed ? `<div class="info" style="margin-top:10px;background:#FBE7E5;border-color:#F2C9C3;color:#8E2A22">↺ <b>Catatan reviu:</b> ${esc(L.catatan)}</div>` : ''}
+    <div class="hint" style="margin-top:8px">Disusun ${esc(L.dibuat_oleh || '')}${L.reviu_oleh ? ' · direviu ' + esc(L.reviu_oleh) : ''}${L.terbit_oleh ? ' · disetujui ' + esc(L.terbit_oleh) : ''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px"><a class="btn btn-out" href="/lhp-cetak.html?id=${L.id}" target="_blank" style="text-decoration:none">🖨 Pratinjau & cetak</a>${aksi.join('')}</div></div>
+   <div class="card pad" style="margin-bottom:14px"><h2>Hasil audit (Bab II huruf D) · ${L.temuan.length} temuan</h2><div class="hint">Setiap temuan memuat kondisi, kriteria, sebab, akibat, tanggapan auditi, dan rekomendasi.</div>
+    ${L.temuan.map((t, i) => `<div class="doc" style="grid-template-columns:minmax(0,1fr) auto"><div><b>${i + 1}. ${esc(t.judul || t.dok)}</b><div class="kode">${t.spj_id ? 'SPJ ' + t.spj_id + ' · ' : ''}${t.nilai_temuan ? 'nilai ' + rp(t.nilai_temuan) + ' · ' : ''}<span class="badge ${TS[t.status][1]}">${TS[t.status][0]}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">${['kriteria', 'sebab', 'akibat', 'tanggapan'].map(k => (t[k] ? '✓ ' : '✕ ') + k).join(' · ')}</div></div>
+      <div>${ed ? `<button class="btn btn-out" data-tu="${t.id}">Lengkapi unsur</button>` : `<button class="btn btn-out" data-tu="${t.id}">Lihat</button>`}</div></div>`).join('') || '<p class="hint">Tidak ada temuan; LHA menyatakan tidak terdapat permasalahan.</p>'}</div>
+   ${BAGIAN.map(([judul, f], bi) => `<details class="card pad" style="margin-bottom:10px" ${bi < 2 ? 'open' : ''}><summary style="cursor:pointer;font-weight:700;font-size:15px">${judul}</summary><div class="fm" style="margin-top:10px">
+     ${f.map(([k, lab, j]) => `<label class="w2">${lab}${j === 'text' ? `<input data-lk="${k}" data-lj="${j}" value="${esc(ambil(D2, k) || '')}" ${ed ? '' : 'disabled'}>` : `<textarea data-lk="${k}" data-lj="${j}" rows="${Math.min(10, Math.max(3, keTeks(ambil(D2, k), j).split('\n').length + 1))}" ${ed ? '' : 'disabled'}>${esc(keTeks(ambil(D2, k), j))}</textarea>`}</label>`).join('')}</div></details>`).join('')}`;
+}
+function formTemuan(t, ed) {
+  const f = (k, l, r) => `<label class="w2">${l}<textarea id="t_${k}" rows="${r || 3}" ${ed ? '' : 'disabled'}>${esc(t[k] || '')}</textarea></label>`;
+  modal('Unsur temuan', `<div class="fm"><label class="w2">Judul temuan<input id="t_judul" value="${esc(t.judul || '')}" ${ed ? '' : 'disabled'}></label><label>Nilai temuan (Rp)<input id="t_nilai" type="number" min="0" value="${t.nilai_temuan || 0}" ${ed ? '' : 'disabled'}></label><label>Dokumen<input value="${esc(t.dok || '')}" disabled></label>
+    ${f('uraian', 'Kondisi', 4)}${f('kriteria', 'Kriteria — kondisi tersebut tidak sesuai dengan')}${f('sebab', 'Sebab — hal ini disebabkan oleh')}${f('akibat', 'Akibat — permasalahan tersebut mengakibatkan')}${f('tanggapan', 'Tanggapan auditi', 2)}${f('rekomendasi', 'Rekomendasi', 3)}</div>`,
+    ed ? '<button class="btn btn-blue" id="mY">Simpan temuan</button>' : '', ed ? async () => {
+      const b = { judul: $('t_judul').value, nilai_temuan: +$('t_nilai').value, uraian: $('t_uraian').value, kriteria: $('t_kriteria').value, sebab: $('t_sebab').value, akibat: $('t_akibat').value, tanggapan: $('t_tanggapan').value, rekomendasi: $('t_rekomendasi').value };
+      try { await API.put('/api/temuan/' + t.id, b); tutup(); toast('Temuan disimpan'); route() } catch (x) { toast(x.message) } } : null, 760);
+}
+function bindLHPEdit() {
+  const L = LH, kumpul = () => { const d = JSON.parse(JSON.stringify(L.data)); document.querySelectorAll('[data-lk]').forEach(el => taruh(d, el.dataset.lk, dariTeks(el.value, el.dataset.lj))); return { judul: $('lJudul').value, periode: $('lPer').value, data: d } };
+  const simpan = async diam => { await API.put('/api/lhp/' + L.id, kumpul()); if (!diam) toast('LHA disimpan') };
+  const aksi = async (x, cat) => { try { if (x === 'ajukan') await simpan(true); await API.post(`/api/lhp/${L.id}/aksi`, { aksi: x, catatan: cat || '' }); tutup();
+    toast({ ajukan: 'Diajukan untuk reviu Inspektur Pembantu', setujui: L.status === 'persetujuan' ? 'LHA disetujui dan terbit bernomor' : 'Reviu disetujui, diteruskan ke Inspektur', kembalikan: 'Dikembalikan ke penyusun' }[x]); route() } catch (z) { toast(z.message) } };
+  if ($('lSimpan')) $('lSimpan').onclick = () => simpan().then(route).catch(z => toast(z.message));
+  if ($('lAju')) $('lAju').onclick = () => modal('Ajukan untuk reviu?', '<p>LHA akan dikunci dan diteruskan kepada Inspektur Pembantu (Pengendali Teknis) untuk direviu.</p>', '<button class="btn btn-blue" id="mY">Ajukan</button>', () => aksi('ajukan'));
+  if ($('lSet')) $('lSet').onclick = () => modal(L.status === 'persetujuan' ? 'Setujui dan terbitkan LHA?' : 'Setujui hasil reviu?', L.status === 'persetujuan' ? '<p>LHA akan diberi nomor, bertanggal hari ini, dan dinyatakan terbit. Setelah terbit, OPD dapat melihat LHA ini.</p>' : '<p>LHA diteruskan kepada Inspektur untuk disetujui dan ditandatangani.</p><div class="fm"><label class="w2">Catatan reviu (opsional)<textarea id="kc" rows="2"></textarea></label></div>',
+    '<button class="btn btn-green" id="mY">Setujui</button>', () => aksi('setujui', $('kc') ? $('kc').value : ''));
+  if ($('lKem')) $('lKem').onclick = () => modal('Kembalikan ke penyusun', '<div class="fm"><label class="w2">Catatan reviu (wajib)<textarea id="kc" rows="3"></textarea></label></div>', '<button class="btn btn-red" id="mY">Kembalikan</button>', () => aksi('kembalikan', $('kc').value));
+  if ($('lHapus')) $('lHapus').onclick = async () => { if (!confirm('Hapus draf LHA ini? Temuan akan dilepas kembali.')) return; try { await API.del('/api/lhp/' + L.id); toast('Draf dihapus'); location.hash = '#lhp' } catch (z) { toast(z.message) } };
+  $('lRiw').onclick = async () => { const R = await API.get('/api/log?objek=' + encodeURIComponent('lhp:' + L.id)); modal('Riwayat LHA', R.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0F2F5"><b>${esc(r.aksi)}</b><div class="hint">${tgl(r.waktu)} ${r.waktu.slice(11, 16)} · ${esc(r.user)}${r.detail ? ' · ' + esc(r.detail) : ''}</div></div>`).join('') || '<div class="hint">Belum ada riwayat.</div>') };
+  document.querySelectorAll('[data-tu]').forEach(b => b.onclick = () => formTemuan(L.temuan.find(t => t.id === +b.dataset.tu), L.status === 'draf'));
+}
+
+// ================= PKPT
+let PF = 'ALL';
+function vPKPT() {
+  const R = D.pkpt, jen = [...new Set(R.map(r => r.jenis))], L = PF === 'ALL' ? R : R.filter(r => r.jenis === PF);
+  const tot = R.reduce((s, r) => s + r.anggaran, 0), hari = R.reduce((s, r) => s + r.hari, 0), rata = R.length ? Math.round(R.reduce((s, r) => s + r.realisasi, 0) / R.length) : 0;
+  const prog = r => r.realisasi >= 100 ? ['Selesai', 'b-green'] : r.m2 < NOW_M ? ['Terlambat', 'b-red'] : r.m1 <= NOW_M ? ['Berjalan', 'b-blue'] : ['Belum mulai', 'b-grey'];
+  return `<div class="row r-kpi">${kpi('list', '#E4EEF9', 'var(--blue)', R.length, 'Kegiatan PKPT ' + new Date().getFullYear())}${kpi('chart', '#E3F3E8', 'var(--green)', rpS(tot), 'Total anggaran (DPA)')}
+   ${kpi('cal', '#FBF1DC', 'var(--amber)', hari.toLocaleString('id-ID'), 'Hari-orang pengawasan')}${kpi('check', '#E2F3F1', 'var(--teal)', rata + '%', 'Rata-rata realisasi')}</div>
+   <div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><h2>Program Kerja Pengawasan Tahunan Berbasis Risiko</h2><div class="hint">Sumber awal: Lampiran II Keputusan Bupati Konawe Selatan No. 700.1/549/2026</div></div>${KELOLA ? '<button class="btn btn-blue" id="pAdd">+ Tambah kegiatan</button>' : ''}</div>
+   <div class="flt"><select id="pf"><option value="ALL">Semua jenis</option>${jen.map(j => `<option ${PF === j ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select><span class="hint">${L.length} kegiatan</span></div>
+   <div class="tw"><table class="tbl"><thead><tr><th>Kegiatan</th><th>Jenis</th><th>Objek</th><th>Jadwal</th><th class="num">Hari</th><th class="num">Anggaran</th><th>Pelaksana</th><th>Risiko</th><th>Realisasi</th><th>Status</th>${KELOLA ? '<th></th>' : ''}</tr></thead><tbody>
+   ${L.map(r => `<tr><td><b>${esc(r.kegiatan)}</b>${r.catatan ? `<div class="kode">${esc(r.catatan)}</div>` : ''}</td><td>${esc(r.jenis)}</td><td>${esc(r.objek)}</td><td>${BLN[r.m1 - 1].slice(0, 3)}${r.m2 !== r.m1 ? '–' + BLN[r.m2 - 1].slice(0, 3) : ''}</td><td class="num">${r.hari.toLocaleString('id-ID')}</td><td class="num">${rp(r.anggaran)}</td><td>${esc(r.pelaksana)}</td>
+    <td><span class="badge ${r.risiko === 'Tinggi' ? 'b-red' : r.risiko === 'Rendah' ? 'b-green' : 'b-amber'}">${esc(r.risiko)}</span></td><td><div style="display:flex;gap:6px;align-items:center"><div class="bar2"><i style="width:${r.realisasi}%"></i></div><small>${r.realisasi}%</small></div></td>
+    <td><span class="badge ${prog(r)[1]}">${prog(r)[0]}</span></td>${KELOLA ? `<td><button class="lnk" data-pe="${r.id}">Ubah</button></td>` : ''}</tr>`).join('')}
+   <tr><td colspan="4"><b>Jumlah</b></td><td class="num"><b>${L.reduce((s, r) => s + r.hari, 0).toLocaleString('id-ID')}</b></td><td class="num"><b>${rp(L.reduce((s, r) => s + r.anggaran, 0))}</b></td><td colspan="${KELOLA ? 5 : 4}"></td></tr></tbody></table></div></div>`;
+}
+function formPKPT(r) {
+  r = r || { kegiatan: '', jenis: 'Audit Ketaatan', objek: '', m1: NOW_M, m2: NOW_M, hari: 0, anggaran: 0, pelaksana: '', risiko: 'Sedang', realisasi: 0, catatan: '' };
+  const bl = (id, v) => `<select id="${id}">${BLN.map((b, i) => `<option value="${i + 1}" ${i + 1 === v ? 'selected' : ''}>${b}</option>`).join('')}</select>`;
+  modal(r.id ? 'Ubah kegiatan PKPT' : 'Tambah kegiatan PKPT', `<div class="fm"><label class="w2">Kegiatan<input id="k1" value="${esc(r.kegiatan)}"></label><label>Jenis pengawasan<input id="k2" value="${esc(r.jenis)}" list="jl"><datalist id="jl">${[...new Set(D.pkpt.map(x => x.jenis))].map(j => `<option>${esc(j)}</option>`).join('')}</datalist></label>
+    <label>Objek<input id="k3" value="${esc(r.objek)}"></label><label>Mulai${bl('k4', r.m1)}</label><label>Selesai${bl('k5', r.m2)}</label><label>Hari-orang<input id="k6" type="number" min="0" value="${r.hari}"></label>
+    <label>Anggaran (Rp)<input id="k7" type="number" min="0" value="${r.anggaran}"></label><label>Pelaksana<input id="k8" value="${esc(r.pelaksana)}"></label><label>Tingkat risiko<select id="k9">${['Tinggi', 'Sedang', 'Rendah'].map(x => `<option ${x === r.risiko ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
+    <label class="w2">Realisasi: <span id="rv">${r.realisasi}%</span><input id="k10" type="range" min="0" max="100" step="5" value="${r.realisasi}" oninput="document.getElementById('rv').textContent=this.value+'%'"></label><label class="w2">Catatan<input id="k11" value="${esc(r.catatan || '')}"></label></div>`,
+    `${r.id ? '<button class="btn btn-red" id="pDel">Hapus</button>' : ''}<button class="btn btn-blue" id="mY">Simpan</button>`, async () => {
+      const b = { kegiatan: $('k1').value.trim(), jenis: $('k2').value.trim(), objek: $('k3').value.trim(), m1: +$('k4').value, m2: +$('k5').value, hari: +$('k6').value, anggaran: +$('k7').value, pelaksana: $('k8').value.trim(), risiko: $('k9').value, realisasi: +$('k10').value, catatan: $('k11').value.trim() };
+      if (!b.kegiatan) return toast('Nama kegiatan wajib diisi');
+      try { r.id ? await API.put('/api/pkpt/' + r.id, b) : await API.post('/api/pkpt', b); tutup(); toast('PKPT disimpan'); route() } catch (e) { toast(e.message) } });
+  if (r.id) $('pDel').onclick = async () => { if (!confirm('Hapus kegiatan ini dari PKPT?')) return; try { await API.del('/api/pkpt/' + r.id); tutup(); toast('Kegiatan dihapus'); route() } catch (e) { toast(e.message) } };
+}
+
+// ================= AGENDA & SURAT TUGAS
+let AF = 'akan';
+function vAgenda() {
+  const hari = iso(new Date()); let L = D.agenda.slice(); L = AF === 'akan' ? L.filter(a => a.tgl >= hari) : AF === 'lalu' ? L.filter(a => a.tgl < hari).reverse() : L;
+  return `<div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><h2>Agenda Kegiatan & Surat Tugas</h2><div class="hint">Jadwal kegiatan pengawasan dan penerbitan surat tugas tim.</div></div>${KELOLA ? '<button class="btn btn-blue" id="aAdd">+ Tambah agenda</button>' : ''}</div>
+   <div class="flt"><div class="tab">${[['akan', 'Akan datang'], ['lalu', 'Sudah lewat'], ['semua', 'Semua']].map(([k, n]) => `<button class="${AF === k ? 'on' : ''}" data-af="${k}">${n}</button>`).join('')}</div><span class="hint">${L.length} agenda</span></div>
+   <div class="tw"><table class="tbl"><thead><tr><th>Tanggal</th><th>Acara</th><th>Tempat · Objek</th><th>Tim</th><th>Surat tugas</th><th></th></tr></thead><tbody>
+   ${L.map(a => `<tr><td><b>${tgl(a.tgl)}</b><div class="kode">${esc(a.jam)} · ${a.lama || 1} hari</div></td><td><b>${esc(a.acara)}</b><div class="kode">PJ: ${esc(a.pj)}</div></td><td>${esc(a.tempat)}<div class="kode">${esc(a.objek)}</div></td>
+    <td style="font-size:12px">${(a.tim || []).map(t => esc(t.nama) + ' <span class="kode">(' + esc(t.peran) + ')</span>').join('<br>')}</td><td>${a.no_st ? `<span class="kode">${esc(a.no_st)}</span><br><button class="lnk" data-st="${a.id}">🖨 Cetak</button>` : '–'}</td>
+    <td>${KELOLA ? `<button class="lnk" data-ae="${a.id}">Ubah</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Tidak ada agenda.</td></tr>'}</tbody></table></div></div>`;
+}
+function formAgenda(a) {
+  a = a || { tgl: iso(new Date()), jam: '09.00', acara: '', tempat: '', objek: '', pj: '', pic: '', no_st: '', dasar: 'Keputusan Bupati Konawe Selatan Nomor 700.1/549/2026 tentang PKPT Berbasis Risiko Tahun Anggaran 2026', tim: [], lama: 1 };
+  modal(a.id ? 'Ubah agenda' : 'Tambah agenda', `<div class="fm"><label>Tanggal<input id="g1" type="date" value="${a.tgl}"></label><label>Jam<input id="g2" value="${esc(a.jam)}"></label>
+    <label class="w2">Acara / kegiatan<input id="g3" value="${esc(a.acara)}"></label><label>Tempat<input id="g4" value="${esc(a.tempat)}"></label><label>Objek<input id="g5" value="${esc(a.objek)}"></label>
+    <label>Penanggung jawab<input id="g6" value="${esc(a.pj)}"></label><label>PIC<input id="g7" value="${esc(a.pic)}"></label><label>Nomor surat tugas<input id="g8" value="${esc(a.no_st)}" placeholder="700.1/…/INSP/2026"></label><label>Lama (hari)<input id="g9" type="number" min="1" value="${a.lama || 1}"></label>
+    <label class="w2">Dasar<textarea id="g10" rows="2">${esc(a.dasar || '')}</textarea></label><label class="w2">Tim (satu baris per orang: Nama | Peran)<textarea id="g11" rows="4">${(a.tim || []).map(t => t.nama + ' | ' + t.peran).join('\n')}</textarea></label></div>`,
+    `${a.id ? '<button class="btn btn-red" id="gDel">Hapus</button>' : ''}<button class="btn btn-blue" id="mY">Simpan</button>`, async () => {
+      const b = { tgl: $('g1').value, jam: $('g2').value, acara: $('g3').value.trim(), tempat: $('g4').value, objek: $('g5').value, pj: $('g6').value, pic: $('g7').value, no_st: $('g8').value.trim(), lama: +$('g9').value || 1, dasar: $('g10').value,
+        tim: $('g11').value.split('\n').map(l => l.split('|').map(x => x.trim())).filter(x => x[0]).map(x => ({ nama: x[0], peran: x[1] || 'Anggota' })) };
+      if (!b.acara) return toast('Acara wajib diisi');
+      try { a.id ? await API.put('/api/agenda/' + a.id, b) : await API.post('/api/agenda', b); tutup(); toast('Agenda disimpan'); route() } catch (e) { toast(e.message) } }, 680);
+  if (a.id) $('gDel').onclick = async () => { if (!confirm('Hapus agenda ini?')) return; try { await API.del('/api/agenda/' + a.id); tutup(); toast('Agenda dihapus'); route() } catch (e) { toast(e.message) } };
+}
+function cetakST(a) {
+  const w = window.open('', '_blank'); const sampai = new Date(a.tgl); sampai.setDate(sampai.getDate() + (a.lama || 1) - 1);
+  w.document.write(`<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Surat Tugas ${esc(a.no_st)}</title><style>
+   body{font-family:"Times New Roman",serif;font-size:12pt;line-height:1.5;margin:0;padding:24px 48px;color:#000}.kop{text-align:center;border-bottom:3px double #000;padding-bottom:6px;margin-bottom:14px}
+   .kop b{display:block;font-size:14pt}.kop small{font-size:10pt}h3{text-align:center;margin:10px 0 0;text-decoration:underline}.no{text-align:center;margin-bottom:14px}
+   table{border-collapse:collapse;width:100%}td{vertical-align:top;padding:2px 4px}.t td{border:1px solid #000;padding:4px 6px}.ttd{width:45%;margin-left:55%;margin-top:28px}@media print{body{padding:0 20px}}</style></head><body>
+   <div class="kop"><b>PEMERINTAH KABUPATEN KONAWE SELATAN</b><b>INSPEKTORAT DAERAH</b><small>Jalan ............................................ Andoolo</small></div>
+   <h3>SURAT TUGAS</h3><div class="no">Nomor: ${esc(a.no_st)}</div>
+   <table><tr><td style="width:90px">Dasar</td><td style="width:10px">:</td><td>${esc(a.dasar || '')}</td></tr></table>
+   <p style="text-align:center;font-weight:bold;margin:12px 0">MENUGASKAN</p>
+   <table><tr><td style="width:90px">Kepada</td><td style="width:10px">:</td><td><table class="t"><tr><td><b>No</b></td><td><b>Nama</b></td><td><b>Peran dalam tim</b></td></tr>
+   ${(a.tim || []).map((t, i) => `<tr><td>${i + 1}</td><td>${esc(t.nama)}</td><td>${esc(t.peran)}</td></tr>`).join('')}</table></td></tr>
+   <tr><td>Untuk</td><td>:</td><td>${esc(a.acara)} pada ${esc(a.objek)}, bertempat di ${esc(a.tempat)}, selama ${a.lama || 1} hari mulai ${tgl(a.tgl)}${(a.lama || 1) > 1 ? ' sampai ' + tgl(iso(sampai)) : ''}, dan melaporkan hasilnya kepada Inspektur Daerah.</td></tr></table>
+   <div class="ttd">Ditetapkan di Andoolo<br>pada tanggal ${tgl(a.tgl)}<br>INSPEKTUR DAERAH<br>KABUPATEN KONAWE SELATAN,<br><br><br><br>.........................................<br>NIP. .....................................</div>
+   <script>setTimeout(()=>print(),300)<\/script></body></html>`); w.document.close();
+}
+
+// ================= PENGGUNA (ADMIN)
+function vUsers() {
+  return `<div class="card pad"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center"><div><h2>Pengguna & Hak Akses</h2><div class="hint">Bendahara, PPK, dan PA/KPA terikat pada satu OPD. Inspektorat melihat seluruh OPD.</div></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-out" id="uKartu">🖨 Kartu akun OPD</button><button class="btn btn-blue" id="uAdd">+ Tambah pengguna</button></div></div>
+   <div class="tw" style="margin-top:10px"><table class="tbl"><thead><tr><th>Nama pengguna</th><th>Nama</th><th>Peran</th><th>Perangkat daerah</th><th>Obrik ditugaskan</th><th>Status</th><th></th></tr></thead><tbody>
+   ${D.users.map(u => `<tr><td class="kode">${esc(u.username)}</td><td><b>${esc(u.nama)}</b><div class="kode">${esc(u.jabatan || '')}${u.nip ? ' · NIP ' + esc(u.nip) : ''}</div></td><td>${EA.PERAN[u.peran]}</td><td>${esc(OPDN[u.opd] || '–')}</td><td style="font-size:12px">${['auditor', 'ketua'].includes(u.peran) ? (u.obrik.length ? u.obrik.map(o => esc(OPDN[o] || o)).join(', ') : '<span style="color:var(--red)">belum ditugaskan</span>') : (['admin', 'inspektur', 'irban'].includes(u.peran) ? '<span class="kode">seluruh obrik</span>' : '–')}</td>
+    <td>${u.aktif ? '<span class="badge b-green">Aktif</span>' : '<span class="badge b-grey">Nonaktif</span>'}${u.ganti ? '<div class="kode" style="color:#B7791F">sandi awal belum diganti</div>' : ''}</td><td><button class="lnk" data-ue="${u.id}">Ubah</button>${['auditor', 'ketua'].includes(u.peran) ? `<button class="lnk" data-uo="${u.id}">Atur obrik</button>` : ''}<button class="lnk" data-ur="${u.id}">Reset sandi</button></td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function cetakKartu(k) { try { sessionStorage.setItem('kartuAkun', JSON.stringify(k)) } catch (e) { } location.href = '/kartu-akun.html' }
+function formKartu() {
+  const RO = { bendahara: 'Bendahara', ppk: 'PPK', pakpa: 'PA/KPA' }, bd = D.users.filter(u => RO[u.peran] && u.aktif).sort((a, b) => OPD.findIndex(o => o.k === a.opd) - OPD.findIndex(o => o.k === b.opd) || Object.keys(RO).indexOf(a.peran) - Object.keys(RO).indexOf(b.peran));
+  modal('Kartu akun OPD', `<p class="hint" style="margin-top:0">Setiap akun yang dipilih mendapat <b>kata sandi awal unik</b> dan wajib menggantinya saat pertama masuk. Kata sandi lama langsung tidak berlaku. Kata sandi hanya tampil di kartu ini, jadi cetak atau simpan sebagai PDF lalu serahkan langsung kepada bendaharanya.</p>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;font-weight:700;margin:8px 0">${Object.entries(RO).map(([k, n]) => `<label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-kr="${k}"> Semua ${n}</label>`).join('')}</div>
+    <div style="display:grid;gap:4px;max-height:320px;overflow:auto">${bd.map(u => `<label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-kb="${u.id}" data-kp="${u.peran}"><span><b>${esc(OPDN[u.opd] || u.opd)}</b> · ${RO[u.peran]} <span class="kode">${esc(u.username)}${u.ganti ? ' · kartu sudah pernah dibuat' : ''}</span></span></label>`).join('')}</div>`,
+    '<button class="btn btn-blue" id="mY">Buat sandi & cetak kartu</button>', async () => {
+      const ids = [...document.querySelectorAll('[data-kb]:checked')].map(x => +x.dataset.kb);
+      if (!ids.length) return toast('Pilih minimal satu akun');
+      if (!confirm(`Buat kata sandi awal baru untuk ${ids.length} akun? Kata sandi lama mereka tidak berlaku lagi.`)) return;
+      try { const r = await API.post('/api/users/kartu', { ids }); cetakKartu(r.kartu) } catch (e) { toast(e.message) } });
+  document.querySelectorAll('[data-kr]').forEach(r => r.onchange = () => document.querySelectorAll(`[data-kp="${r.dataset.kr}"]`).forEach(x => x.checked = r.checked));
+}
+function formUser(u) {
+  const baru = !u; u = u || { username: '', nama: '', nip: '', jabatan: '', peran: 'bendahara', opd: OPD[0].k, aktif: 1 };
+  modal(baru ? 'Tambah pengguna' : 'Ubah pengguna', `<div class="fm">${baru ? `<label class="w2">Nama pengguna (huruf kecil, angka, titik)<input id="u1"></label>` : ''}<label class="w2">Nama lengkap<input id="u2" value="${esc(u.nama)}"></label>
+    <label>NIP<input id="u3" value="${esc(u.nip || '')}"></label><label>Jabatan<input id="u4" value="${esc(u.jabatan || '')}"></label>
+    <label>Peran<select id="u5">${Object.entries(EA.PERAN).map(([k, n]) => `<option value="${k}" ${k === u.peran ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label>Perangkat daerah<select id="u6"><option value="">–</option>${OPD.map(o => `<option value="${o.k}" ${o.k === u.opd ? 'selected' : ''}>${esc(o.n)}</option>`).join('')}</select></label>
+    ${baru ? '' : `<label class="w2" style="flex-direction:row;gap:8px;align-items:center"><input type="checkbox" id="u7" ${u.aktif ? 'checked' : ''}> Akun aktif</label>`}</div>`,
+    '<button class="btn btn-blue" id="mY">Simpan</button>', async () => {
+      const b = { nama: $('u2').value.trim(), nip: $('u3').value.trim(), jabatan: $('u4').value.trim(), peran: $('u5').value, opd: $('u6').value || null, aktif: baru ? true : $('u7').checked };
+      try { if (baru) { b.username = $('u1').value.trim(); const r = await API.post('/api/users', b); tutup(); modal('Pengguna dibuat', `<p>Akun <b>${esc(b.username)}</b> dibuat. Kata sandi awal:</p><p style="font-size:20px;font-family:Consolas,monospace"><b>${esc(r.password)}</b></p><p class="hint">Pengguna wajib menggantinya saat pertama masuk.</p>`, '<button class="btn btn-blue" id="mY">🖨 Cetak kartu akun</button>', () => cetakKartu(r.kartu)) }
+        else { await API.put('/api/users/' + u.id, b); tutup(); toast('Pengguna disimpan') } route() } catch (e) { toast(e.message) } });
+}
+
+// ================= RIWAYAT
+function vLog() {
+  return `<div class="card pad"><h2>Riwayat Aktivitas</h2><div class="hint">Jejak audit seluruh tindakan pengguna (300 terakhir).</div>
+   <div class="tw" style="margin-top:10px"><table class="tbl"><thead><tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Objek</th><th>Keterangan</th></tr></thead><tbody>
+   ${D.log.map(r => `<tr><td class="kode">${r.waktu.replace('T', ' ')}</td><td>${esc(r.user)}<div class="kode">${EA.PERAN[r.peran] || ''}</div></td><td><b>${esc(r.aksi)}</b></td><td>${/^[A-Z]+-|^GUI/.test(r.objek) ? `<a href="#kk/${r.objek}">${esc(r.objek)}</a>` : esc(r.objek)}</td><td style="font-size:12px">${esc(r.detail || '')}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+const vPH = k => { const m = MENU.find(x => x[0] === k); return `<div class="card ph"><div class="big">🛠</div><h2>${m ? m[1] : 'Modul'}</h2><p class="hint" style="max-width:520px;margin:8px auto 0;font-size:13px">${PH[k] || ''}</p><p class="hint" style="margin-top:14px">Modul ini dijadwalkan pada <b>tahap 2</b> pengembangan.</p></div>` };
+
+// ================= ROUTER
+let RUTE = '';
+function gambar() {
+  const [k, arg] = RUTE.split('/');
+  drawMenu(k === 'kk' ? 'pengawasan' : k);
+  const T = { dasbor: 'Dasbor', pengawasan: 'Pengawasan Bulanan', kk: 'Kertas Kerja', lhp: 'LHP & Tindak Lanjut', pkpt: 'PKPT Berbasis Risiko', agenda: 'Agenda & Surat Tugas', jdih: 'JDIH Pengawasan Pemerintah Daerah Konawe Selatan', awal: 'Audit Awal Otomatis', pengguna: 'Pengguna & Akses', riwayat: 'Riwayat Aktivitas' };
+  $('ttl').textContent = T[k] || (MENU.find(x => x[0] === k) || [, 'e-Audit'])[1];
+  const v = $('view');
+  if (k === 'dasbor') { v.innerHTML = vDasbor(); document.querySelectorAll('[data-day]').forEach(d => d.onclick = () => { dayIdx = +d.dataset.day; gambar() });
+    document.querySelectorAll('[data-opd]').forEach(d => d.onclick = () => { F.opd = d.dataset.opd; F.st = 'ALL'; location.hash = '#pengawasan' });
+    document.querySelectorAll('[data-st]').forEach(s => s.onclick = () => cetakST(D.agenda.find(a => a.id === +s.dataset.st))) }
+  else if (k === 'pengawasan') { v.innerHTML = vPengawasan(); bindPengawasan() }
+  else if (k === 'kk') { v.innerHTML = vKK(arg); bindKK() }
+  else if (k === 'lhp' && arg === 'temuan') { v.innerHTML = vLHP(); bindLHP() }
+  else if (k === 'lhp' && arg) { v.innerHTML = vLHPEdit(); bindLHPEdit() }
+  else if (k === 'lhp') { v.innerHTML = vLHPList(); if ($('lBaru')) $('lBaru').onclick = formLHPBaru }
+  else if (k === 'pkpt') { v.innerHTML = vPKPT(); $('pf').onchange = e => { PF = e.target.value; gambar() }; if ($('pAdd')) $('pAdd').onclick = () => formPKPT(); document.querySelectorAll('[data-pe]').forEach(b => b.onclick = () => formPKPT(D.pkpt.find(r => r.id === +b.dataset.pe))) }
+  else if (k === 'agenda') { v.innerHTML = vAgenda(); document.querySelectorAll('[data-af]').forEach(b => b.onclick = () => { AF = b.dataset.af; gambar() }); if ($('aAdd')) $('aAdd').onclick = () => formAgenda();
+    document.querySelectorAll('[data-ae]').forEach(b => b.onclick = () => formAgenda(D.agenda.find(a => a.id === +b.dataset.ae))); document.querySelectorAll('[data-st]').forEach(b => b.onclick = () => cetakST(D.agenda.find(a => a.id === +b.dataset.st))) }
+  else if (k === 'pengguna') { v.innerHTML = vUsers(); $('uAdd').onclick = () => formUser(); $('uKartu').onclick = formKartu; document.querySelectorAll('[data-ue]').forEach(b => b.onclick = () => formUser(D.users.find(u => u.id === +b.dataset.ue)));
+    document.querySelectorAll('[data-uo]').forEach(b => b.onclick = () => { const u = D.users.find(x => x.id === +b.dataset.uo);
+      modal('Obrik yang ditugaskan · ' + esc(u.nama), `<p class="hint" style="margin-top:0">${EA.PERAN[u.peran]} hanya dapat melihat SPJ, kertas kerja, temuan, dan LHA dari obrik yang dicentang.</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${OPD.map(o => `<label style="display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px"><input type="checkbox" data-ob="${o.k}" ${u.obrik.includes(o.k) ? 'checked' : ''}>${esc(o.n)}</label>`).join('')}</div>`,
+        '<button class="btn btn-blue" id="mY">Simpan penugasan</button>', async () => { try { await API.put(`/api/users/${u.id}/penugasan`, { obrik: [...document.querySelectorAll('[data-ob]:checked')].map(x => x.dataset.ob) }); tutup(); toast('Penugasan obrik disimpan'); route() } catch (x) { toast(x.message) } }) });
+    document.querySelectorAll('[data-ur]').forEach(b => b.onclick = async () => { const u = D.users.find(x => x.id === +b.dataset.ur); if (!confirm('Reset kata sandi ' + u.username + '?')) return; try { const r = await API.post(`/api/users/${u.id}/reset`); modal('Kata sandi baru', `<p>Kata sandi awal baru untuk <b>${esc(u.username)}</b>:</p><p style="font-size:20px;font-family:Consolas,monospace"><b>${esc(r.password)}</b></p><p class="hint">Sandi lama tidak berlaku lagi. Pengguna wajib menggantinya saat pertama masuk.</p>`, '<button class="btn btn-blue" id="mY">🖨 Cetak kartu akun</button>', () => cetakKartu(r.kartu)) } catch (e) { toast(e.message) } }) }
+  else if (k === 'riwayat') v.innerHTML = vLog();
+  else if (k === 'jdih') JDIH.tampil(v, { kelola: KELOLA });
+  else if (k === 'awal') AUDITAWAL.tampil(v, { opd: OPD });
+  else v.innerHTML = vPH(k);
+}
+async function route() {
+  RUTE = (location.hash || '#dasbor').slice(1); const k = RUTE.split('/')[0];
+  try {
+    const perlu = { dasbor: ['spj', 'audit', 'temuan', 'agenda', 'ringkas'], pengawasan: ['spj', 'audit', 'temuan'], kk: ['spj', 'audit'], lhp: RUTE === 'lhp/temuan' ? ['temuan', 'spj', 'audit'] : ['lhp', 'temuan', 'agenda'], pkpt: ['pkpt'], agenda: ['agenda'], pengguna: ['users'], riwayat: ['log'] }[k] || [];
+    if (perlu.length) await muat(...perlu);
+    if (k === 'lhp' && /^lhp\/\d+$/.test(RUTE)) LH = await API.get('/api/lhp/' + RUTE.split('/')[1]);
+    gambar(); window.scrollTo(0, 0);
+  } catch (e) { $('view').innerHTML = `<div class="card pad">Gagal memuat data: ${esc(e.message)}</div>` }
+}
+$('gsearch').onkeydown = e => { if (e.key === 'Enter') { F.q = e.target.value.toLowerCase(); F.opd = 'ALL'; F.st = 'ALL'; if (location.hash === '#pengawasan') route(); else location.hash = '#pengawasan' } };
+window.addEventListener('hashchange', route);
+route();
+})();
+</script>
+</body>
+</html>

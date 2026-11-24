@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Rekap SPJ GU · Cetak</title>
+<style>
+@page{size:A4 landscape;margin:1.6cm 1.8cm}
+body{margin:0;background:#E9ECF0;font-family:Arial,Helvetica,sans-serif;font-size:10.5pt;color:#000}
+.alat{position:sticky;top:0;background:#1F2B3A;color:#fff;padding:10px 16px;display:flex;gap:10px;font-family:"Segoe UI",sans-serif;font-size:13px}
+.alat button{border:0;border-radius:7px;padding:7px 14px;font-weight:600;cursor:pointer}.alat .c{background:#2F8F4E;color:#fff}
+.hal{background:#fff;width:29.7cm;min-height:21cm;margin:18px auto;padding:1.6cm 1.8cm;box-shadow:0 2px 12px rgba(0,0,0,.15)}
+h1{font-size:13pt;text-align:center;margin:0}h2{font-size:11pt;text-align:center;margin:2pt 0 12pt;font-weight:normal}
+.kop{text-align:center;border-bottom:2px solid #000;padding-bottom:6pt;margin-bottom:10pt;line-height:1.3}.kop b{display:block;font-size:12pt}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:3pt 5pt;vertical-align:top}th{background:#EDEDED}.n{text-align:right;white-space:nowrap}
+.ttd{display:grid;grid-template-columns:1fr 1fr;margin-top:22pt;text-align:center;line-height:1.35}.ttd .nm{margin-top:48pt;font-weight:bold;text-decoration:underline}
+@media print{body{background:#fff}.alat{display:none}.hal{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="alat"><button onclick="history.length>1?history.back():close()">← Kembali</button><button class="c" onclick="print()">🖨 Cetak / simpan PDF</button><span id="st"></span></div>
+<div class="hal" id="doc">Memuat…</div>
+<script src="assets/common.js"></script>
+<script>
+(async () => {
+  const e = EA.esc, id = new URLSearchParams(location.search).get('id'); let g;
+  try { g = await API.get('/api/gu/' + id) } catch (x) { document.getElementById('doc').textContent = x.message; return }
+  const th = new Date(g.tgl).getFullYear(), rp = v => Math.round(v).toLocaleString('id-ID');
+  document.getElementById('st').textContent = g.status === 'final' ? 'Final' : 'DRAF — belum final';
+  document.getElementById('doc').innerHTML = `<div class="kop"><b>PEMERINTAH KABUPATEN KONAWE SELATAN</b><b>${e(g.opd_nama.toUpperCase())}</b></div>
+    <h1>${{ GU: 'LAPORAN PERTANGGUNGJAWABAN UANG PERSEDIAAN / GANTI UANG', TU: 'LAPORAN PERTANGGUNGJAWABAN TAMBAHAN UANG (TU)', LS: 'REKAPITULASI SPJ PEMBAYARAN LANGSUNG (LS)' }[g.jenis || 'GU']}</h1>
+    <h2>${e(g.nama)} · Tahun Anggaran ${th}${g.status !== 'final' ? ' — <b>DRAF</b>' : ''}</h2>
+    ${g.no_sp2d || g.nilai_sp2d ? `<p style="margin:0 0 8pt">${g.no_sp2d ? 'Nomor SP2D: <b>' + e(g.no_sp2d) + '</b>' + (g.tgl_sp2d ? ' tanggal ' + EA.tgl(g.tgl_sp2d) : '') + ' · ' : ''}${g.nilai_sp2d ? (g.jenis === 'TU' ? 'Nilai TU diterima' : 'Nilai SP2D') + ': <b>Rp ' + rp(g.nilai_sp2d) + '</b>' : ''}</p>` : ''}
+    <table><tr><th style="width:4%">No.</th><th style="width:7%">No. BKU</th><th style="width:11%">Tanggal</th><th style="width:15%">Kode Rekening</th><th>Uraian</th><th style="width:17%">Penerima</th><th style="width:12%">Jumlah (Rp)</th></tr>
+    ${g.spj.map((p, i) => `<tr><td class="n">${i + 1}</td><td>${e(p.bku || '–')}</td><td>${e(p.tgl || '–')}</td><td>${e(p.kode || '–')}</td><td>${e(p.nama)}</td><td>${e(p.penerima || '–')}</td><td class="n">${rp(p.nilai)}</td></tr>`).join('')}
+    <tr><td colspan="6" style="text-align:right"><b>JUMLAH</b></td><td class="n"><b>${rp(g.total)}</b></td></tr></table>
+    ${g.jenis === 'TU' ? `<table style="width:55%;margin-top:8pt"><tr><td>Nilai TU diterima</td><td class="n">${rp(g.nilai_sp2d || 0)}</td></tr><tr><td>Dipertanggungjawabkan (SPJ)</td><td class="n">${rp(g.total)}</td></tr>
+      <tr><td>Sisa TU disetor ke Kas Daerah</td><td class="n">${rp(g.setor || 0)}</td></tr><tr><td><b>Selisih</b></td><td class="n"><b>${rp((g.nilai_sp2d || 0) - g.total - (g.setor || 0))}</b></td></tr></table>` : ''}
+    ${g.jenis === 'LS' && g.nilai_sp2d ? `<p style="margin-top:6pt">Selisih nilai SP2D-LS dengan SPJ: <b>Rp ${rp(g.nilai_sp2d - g.total)}</b></p>` : ''}
+    <p style="margin-top:8pt">Dokumen pertanggungjawaban setiap transaksi tersimpan pada aplikasi e-Audit Kabupaten Konawe Selatan dan dapat diperiksa sesuai kode SPJ.</p>
+    <div class="ttd"><div>Mengetahui,<br>Pengguna Anggaran / Kuasa Pengguna Anggaran<div class="nm">${e(g.pa ? g.pa.nama : '.................................')}</div>NIP ${e(g.pa && g.pa.nip ? g.pa.nip : '.........................')}</div>
+    <div>Andoolo, ${EA.tgl(g.tgl)}<br>Bendahara Pengeluaran<div class="nm">${e(g.bendahara ? g.bendahara.nama : '.................................')}</div>NIP ${e(g.bendahara && g.bendahara.nip ? g.bendahara.nip : '.........................')}</div></div>`;
+  document.title = 'Rekap ' + g.nama + ' ' + g.opd_nama;
+})();
+</script>
+</body>
+</html>

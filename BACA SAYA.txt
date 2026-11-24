@@ -1,0 +1,67 @@
+﻿e-AUDIT KABUPATEN KONAWE SELATAN
+================================
+
+MENJALANKAN
+  Klik dua kali "Jalankan.bat". Browser terbuka di http://localhost:8080
+  Tutup jendela hitam untuk menghentikan aplikasi.
+
+AKUN (semua akun memakai kata sandi awal unik dari kartu akun; wajib ganti saat pertama masuk)
+  * Akun OPD (bendahara, PPK, PA/KPA): kata sandi awal unik ada di "Kartu Akun Bendahara.pdf"
+    dan "Kartu Akun PPK dan PA-KPA.pdf"; wajib ganti saat pertama masuk.
+    Kartu baru: Admin > Pengguna & Akses > Kartu akun OPD.
+  * Akun Inspektorat (inspektur, irban, ketua tim, auditor, admin): kartu di
+    "Kartu Akun Inspektorat.pdf". Simpan PDF kartu di tempat aman; berisi kata sandi.
+  * Salah sandi 5 kali: akun terkunci 15 menit.
+  admin              Administrator (pengguna & hak akses)
+  inspektur          Inspektur Daerah
+  irban1, irban2     Inspektur Pembantu (kelola PKPT & agenda)
+  auditor1, auditor2 Auditor (pengawasan bulanan, kertas kerja, LHP)
+  bendahara.<opd>    Bendahara Pengeluaran   (opd: pupr, dinkes, dikbud, dinsos, bkad,
+  ppk.<opd>          Pejabat Pembuat Komitmen      bappeda, kominfo, setda, pk)
+  pa.<opd>           Pengguna Anggaran / KPA
+  Contoh: bendahara.pk = Bag. Perencanaan & Keuangan Setda (berisi 75 SPJ GU I asli)
+
+ALUR
+  Bendahara input SPJ + unggah scan (Asisten AI membantu)  ->  PPK verifikasi
+  ->  PA/KPA sahkan  ->  bendahara catat SP2D
+  Inspektorat memeriksa SPJ yang telah diajukan (kertas kerja)  ->  temuan masuk LHP
+  ->  OPD unggah tindak lanjut  ->  Inspektorat menyatakan tuntas
+
+DATA
+  data\eaudit.db     database SQLite (cadangkan berkas ini secara berkala)
+  data\unggahan\     scan SPJ dan bukti tindak lanjut
+  dokumen\GU\        tautan ke PDF SPJ GU asli (drive D)
+  Mengulang dari awal: tutup aplikasi, hapus data\eaudit.db, jalankan lagi.
+
+ASISTEN AI
+  OCR offline memakai pustaka di D:\ocr-kerja\venv. Bila tidak tersedia,
+  aplikasi tetap berjalan tanpa fitur AI.
+
+KETERANGAN
+  - Jalankan.bat: hanya dapat diakses dari komputer ini (127.0.0.1).
+  - Jalankan (jaringan kantor).bat: dapat dibuka komputer lain di jaringan kantor
+    lewat http://<IP komputer ini>:8080 (alamat tampil di jendela). Jangan jalankan
+    keduanya bersamaan. Mintakan IP tetap untuk komputer server ke pengelola jaringan.
+  - Data SPJ OPD selain Bag. Perencanaan & Keuangan, paket MONALISA, agenda,
+    dan temuan awal adalah DATA CONTOH untuk pelatihan. PKPT berasal dari
+    Keputusan Bupati No. 700.1/549/2026. SPJ GU I berasal dari berkas asli (hasil OCR).
+MODE ONLINE (sementara, lewat Cloudflare Tunnel)
+  - Jalankan (online).bat: server tetap di komputer ini, lalu dibuka ke internet
+    dengan HTTPS lewat domain di Cloudflare. Komputer harus menyala + internet.
+  - Perlu tunnel\token.txt (token dari dasbor Cloudflare Zero Trust > Networks >
+    Tunnels). Token ini RAHASIA: siapa pun yang memilikinya dapat menyamar sebagai
+    server. Jangan dibagikan/diunggah.
+  - Pengamanan otomatis: cookie Secure + HSTS saat lewat HTTPS, kunci login per IP
+    asli pengunjung, header anti-clickjacking.
+  - Cadangan otomatis: database disalin tiap hari ke D:\eAudit-Cadangan
+    (30 salinan terakhir) beserta berkas unggahan. Sebaiknya salin juga ke
+    flashdisk/drive lain secara berkala.
+
+JDIH PENGAWASAN
+  - Menu "JDIH Pengawasan" (Inspektorat: grup REFERENSI; OPD: menu samping).
+    Semua pengguna yang masuk dapat membaca dan membuka PDF; hanya Admin,
+    Inspektur, dan Irban yang dapat menambah, mengubah, menghapus, atau
+    mengunggah PDF (maks. 20 MB).
+  - PDF isi awal ada di dokumen\JDIH\ (salinan dari drive D:); PDF unggahan
+    baru disimpan di data\unggahan\JDIH\ (ikut dicadangkan otomatis).
+  - Status "Belum dicek" = keberlakuan belum diverifikasi ke sumber resmi.

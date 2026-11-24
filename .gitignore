@@ -1,0 +1,11 @@
+# data, dokumen asli, dan rahasia — JANGAN diunggah
+data/
+dokumen/
+tunnel/
+Kartu Akun*.pdf
+*.db
+*.db-journal
+*.tmp
+*.log
+__pycache__/
+*.pyc

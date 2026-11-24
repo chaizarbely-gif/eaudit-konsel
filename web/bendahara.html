@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal Bendahara · e-Audit Konawe Selatan</title>
+<style>
+:root{
+  --bg:#F3F6F9; --card:#fff; --ink:#1B2533; --muted:#677485; --line:#E3E8EF;
+  --pri:#2F8F4E; --pri2:#5CBF73; --pri-soft:#E7F4EA; --navy:#14284A;
+  --teal:#14857F; --amber:#C98A12; --red:#C8433A; --blue:#2C5A8C;
+  --r:12px; --sh:0 1px 2px rgba(16,32,60,.06),0 4px 14px rgba(16,32,60,.06);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:"Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:13px;line-height:1.45}
+button,select,input{font:inherit;color:inherit}
+a{color:inherit}
+.app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.side{background:linear-gradient(180deg,#14284A 0%,#173a5c 100%);color:#DCE6F2;padding:18px 14px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;gap:10px;align-items:center;padding:4px 6px}
+.logo{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--pri2),var(--pri));display:grid;place-items:center;box-shadow:0 4px 12px rgba(47,143,78,.45)}
+.brand b{display:block;color:#fff;font-size:15px}
+.brand small{color:#9FB6D2;font-size:11px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .grp{font-size:10.5px;letter-spacing:.8px;color:#7F9BBE;margin:12px 8px 4px;font-weight:700}
+.nav a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:9px;color:#C9D7E8;text-decoration:none;cursor:pointer}
+.nav a:hover{background:rgba(255,255,255,.07)}
+.nav a.on{background:rgba(92,191,115,.18);color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--pri2)}
+.nav svg{width:16px;height:16px;flex:none}
+.side .foot{margin-top:auto;background:rgba(255,255,255,.06);border-radius:10px;padding:10px;font-size:11.5px;color:#A9BDD6}
+.side .foot b{color:#fff}
+.main{padding:18px 24px 96px;min-width:0}
+.proto{background:#FFF6E5;border:1px solid #F1D9A6;color:#7A5410;border-radius:9px;padding:7px 12px;font-size:12px;margin-bottom:14px}
+.crumb{font-size:12px;color:var(--muted);margin-bottom:2px}
+.crumb a{text-decoration:none;color:var(--blue)}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.top h1{margin:0;font-size:21px}
+.top p{margin:2px 0 0;color:var(--muted)}
+.steps{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.step{display:flex;gap:7px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 6px;font-weight:600;font-size:12px;color:var(--muted)}
+.step i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:#EEF1F5;font-style:normal;font-size:11px}
+.step.on{border-color:var(--pri);color:var(--pri)}
+.step.on i{background:var(--pri);color:#fff}
+.step.done i{background:var(--pri-soft);color:var(--pri)}
+.sep{width:14px;height:2px;background:var(--line)}
+.layout{display:grid;grid-template-columns:330px 1fr;gap:14px;align-items:start}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);border:1px solid #EDF1F5}
+.panel{padding:14px}
+.panel h3{margin:0 0 2px;font-size:14px}
+.hint{color:var(--muted);font-size:11.5px}
+.search{border:1px solid var(--line);border-radius:9px;padding:7px 10px;width:100%;background:#fff;margin:10px 0 8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:11.5px;cursor:pointer;color:var(--muted);font-weight:600}
+.chip.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.plist{display:flex;flex-direction:column;gap:7px;max-height:calc(100vh - 290px);overflow:auto;padding-right:2px}
+.pi{border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;background:#fff;transition:.15s}
+.pi:hover{border-color:#BFCBD9}
+.pi.on{border-color:var(--pri);box-shadow:0 0 0 3px rgba(47,143,78,.13);background:#FBFEFC}
+.pi b{display:block;font-size:12.5px}
+.pi .meta{font-size:11px;color:var(--muted);margin:2px 0 7px}
+.pi .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mini{flex:1;height:5px;border-radius:5px;background:#EEF1F5;overflow:hidden}
+.mini i{display:block;height:100%}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:600;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.p-grey{background:#EEF1F5;color:#5D6878}.p-red{background:#FBE9E7;color:var(--red)}.p-blue{background:#E5EDF7;color:var(--blue)}
+.p-teal{background:#E2F3F1;color:var(--teal)}.p-amber{background:#FBF1DC;color:var(--amber)}.p-green{background:var(--pri-soft);color:var(--pri)}
+.head{padding:16px 18px;border-radius:var(--r) var(--r) 0 0;background:linear-gradient(135deg,#F1FAF3,#fff 60%);border-bottom:1px solid var(--line)}
+.head h2{margin:4px 0 2px;font-size:17px}
+.kode{font-family:Consolas,monospace;font-size:11.5px;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}
+.fact{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.fact small{display:block;color:var(--muted);font-size:10.5px;font-weight:600;letter-spacing:.3px}
+.fact b{font-size:13px}
+.banner{margin:14px 18px 0;border-radius:9px;padding:9px 12px;font-size:12px;display:flex;gap:8px;align-items:flex-start}
+.b-red{background:#FBE9E7;color:#8E2A22;border:1px solid #F2C9C3}
+.b-blue{background:#EAF1FA;color:#1F4570;border:1px solid #CCDCEF}
+.b-amber{background:#FFF6E5;color:#7A5410;border:1px solid #F1D9A6}
+.body{padding:14px 18px 18px}
+.sect{font-size:11px;letter-spacing:.6px;font-weight:700;color:var(--muted);margin:6px 0 10px;display:flex;justify-content:space-between;align-items:center}
+.docs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.slot{border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.slot.ok{border-color:#BFE0C8}
+.slot.bad{border-color:#F0C4BF;background:#FFFBFA}
+.slot .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.slot .t b{font-size:13px}
+.slot .d{font-size:11.5px;color:var(--muted)}
+.drop{border:1.5px dashed #C5CFDB;border-radius:9px;padding:14px;text-align:center;color:var(--muted);font-size:12px;cursor:pointer;transition:.15s;background:#FAFBFC}
+.drop:hover,.drop.over{border-color:var(--pri);background:#F3FAF5;color:var(--pri)}
+.drop b{color:var(--ink)}
+.file{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:7px 9px;background:#FAFBFC}
+.thumb{width:40px;height:40px;border-radius:7px;flex:none;display:grid;place-items:center;background:#FBE9E7;color:var(--red);font-weight:800;font-size:10.5px;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.file .fn{flex:1;min-width:0}
+.file .fn b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file .fn small{color:var(--muted);font-size:11px}
+.lnk{border:0;background:none;color:var(--blue);font-weight:600;cursor:pointer;padding:2px 4px;font-size:12px}
+.lnk.red{color:var(--red)}
+.err{color:var(--red);font-size:11.5px;font-weight:600}
+.note{background:#FBE9E7;color:#8E2A22;border-radius:7px;padding:6px 8px;font-size:11.5px}
+.field{display:flex;gap:8px;align-items:center;font-size:12px}
+.field input{border:1px solid var(--line);border-radius:7px;padding:5px 8px;width:150px}
+.warn{color:var(--amber);font-size:11.5px;font-weight:600}
+.checks{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.ck{display:flex;gap:9px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:9px;cursor:pointer;background:#fff;font-size:12.5px}
+.ck input{margin-top:2px;accent-color:var(--pri);width:15px;height:15px}
+.ck.on{border-color:#BFE0C8;background:#F7FCF8}
+.bar{position:fixed;left:236px;right:0;bottom:0;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:11px 24px;display:flex;gap:14px;align-items:center;z-index:3}
+.bar .pg{flex:1;display:flex;align-items:center;gap:12px;min-width:0}
+.bar .track{flex:1;max-width:320px;height:8px;border-radius:8px;background:#EEF1F5;overflow:hidden}
+.bar .track i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2));transition:width .3s}
+.btn{border:0;border-radius:9px;padding:8px 14px;font-weight:600;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn-pri{background:var(--pri);color:#fff}.btn-pri:hover{background:#287A43}
+.btn-out{background:#fff;border:1px solid var(--line)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ovl{position:fixed;inset:0;background:rgba(15,25,40,.4);display:none;place-items:center;z-index:5;padding:16px}
+.ovl.on{display:grid}
+.modal{background:#fff;border-radius:14px;max-width:470px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.25);overflow:hidden}
+.modal .mh{padding:16px 18px;border-bottom:1px solid var(--line)}
+.modal .mh h3{margin:0;font-size:16px}
+.modal .mb{padding:14px 18px;font-size:12.5px}
+.modal .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.sum{display:grid;grid-template-columns:110px 1fr;gap:4px 10px;margin-bottom:12px}
+.sum dt{color:var(--muted)}.sum dd{margin:0;font-weight:600}
+.okbox{text-align:center;padding:28px 18px}
+.okbox .big{width:64px;height:64px;border-radius:50%;margin:0 auto 10px;background:linear-gradient(135deg,var(--pri2),var(--pri));display:grid;place-items:center;color:#fff;font-size:30px;box-shadow:0 8px 20px rgba(47,143,78,.35)}
+.tl{display:flex;justify-content:center;gap:0;margin:16px 0 4px;flex-wrap:wrap}
+.tl div{display:flex;flex-direction:column;align-items:center;gap:4px;width:110px;font-size:11px;color:var(--muted);position:relative}
+.tl div:before{content:"";position:absolute;top:8px;left:-50%;width:100%;height:2px;background:var(--line);z-index:0}
+.tl div:first-child:before{display:none}
+.tl i{width:18px;height:18px;border-radius:50%;background:#EEF1F5;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);z-index:1}
+.tl .d i{background:var(--pri)}.tl .c i{background:var(--blue)}
+.tl .d,.tl .c{color:var(--ink);font-weight:600}
+.toast{position:fixed;left:50%;bottom:76px;transform:translate(-50%,30px);background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.25s;box-shadow:0 8px 24px rgba(0,0,0,.2);font-size:12.5px;z-index:9;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (max-width:1180px){.facts{grid-template-columns:repeat(3,1fr)}.docs{grid-template-columns:1fr}}
+@media (max-width:900px){.app{grid-template-columns:1fr}.side{display:none}.layout{grid-template-columns:1fr}.bar{left:0;padding:10px 16px;flex-wrap:wrap}.main{padding:14px 16px 130px}.plist{max-height:260px}}
+@media (max-width:520px){.facts{grid-template-columns:1fr 1fr}}
+.tf{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}.tf label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:var(--muted)}.tf input,.tf select,.tf textarea{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:13px;font-weight:400;color:var(--ink);background:#fff;font-family:inherit}.tf .w3{grid-column:1/-1}.tf input:disabled,.tf textarea:disabled{background:#F4F6F9}
+@media (max-width:900px){.tf{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M12 17v-6"/><path d="M9 13.5 12 10.5l3 3"/></svg></div>
+      <div><b>e-Audit · Bendahara</b><small>Kabupaten Konawe Selatan</small></div>
+    </div>
+    <nav class="nav" id="navOPD"></nav>
+    <div class="foot">Masuk sebagai<br><b id="nmFoot">Bendahara</b><br><span id="opdFoot"></span></div>
+  </aside>
+
+  <main class="main">
+        <div class="top">
+      <div>
+        <div class="crumb">Portal Bendahara OPD › Unggah SPJ</div>
+        <h1>Unggah Dokumen SPJ</h1>
+        <p>Bendahara pengeluaran memilih paket dari MONALISA, mengunggah dokumen wajib, lalu mengajukannya ke PPK untuk diverifikasi.</p>
+      </div>
+      <div class="steps" id="steps"></div>
+    </div>
+
+    <div class="layout">
+      <section class="card panel">
+        <h3>Paket saya</h3>
+        <div class="hint">Paket dari MONALISA · SPJ diinput bendahara · <span id="opdHint"></span></div>
+        <button class="btn btn-pri" id="bBaru" style="width:100%;margin-top:10px">+ Input SPJ baru</button>
+        <button class="btn btn-out" id="bMassal" style="width:100%;margin-top:6px;display:none"></button>
+        <input class="search" id="q" placeholder="Cari paket atau kode…">
+        <div class="chips" id="chips"></div>
+        <div class="plist" id="plist"></div>
+      </section>
+      <section class="card" id="detail"></section>
+    </div>
+  </main>
+</div>
+
+<div class="bar" id="bar"></div>
+<div class="ovl" id="ovl"><div class="modal" id="modal"></div></div>
+<input type="file" id="picker" accept=".pdf,.jpg,.jpeg,.png" hidden>
+<div class="toast" id="toast"></div>
+
+<script src="assets/common.js"></script>
+<script src="assets/opd-nav.js"></script>
+<script>
+(async()=>{
+// ---------- data dari server (SQLite) ----------
+const ME=await API.me(); if(!ME){location.href='/login.html';return} if(ME.peran!=='bendahara'){location.href='/';return}
+EA.init(await API.get('/api/ref'));
+const SES={opd:ME.opd,nama:ME.nama};
+const {JENIS,BLN,NOW_M}=EA; const OPDNAMA=ME.opd_nama||EA.OPDN[ME.opd];
+const P=(await API.get('/api/spj')).map(p=>{p._st=p.st;return p});
+const FILES={}; P.forEach(p=>{Object.entries(p.files||{}).forEach(([i,f])=>{FILES[p.id+'|'+i]=f});delete p.files});
+function muatan(p){const files={};p.docs.forEach((d,i)=>{const f=FILES[p.id+'|'+i];if(f)files[i]=JSON.parse(JSON.stringify(f,(k,v)=>k==='url'?undefined:v))});
+  return {mek:p.mek||'GU',nama:p.nama,nilai:p.nilai,bku:p.bku,tgl:p.tgl,kode:p.kode,penerima:p.penerima,m:p.m,docs:p.docs,cek:p.cek,nk:p.nk||'',aiSaran:p.aiSaran||null,files}}
+const SNAP={}; const kunci=p=>JSON.stringify(muatan(p)); P.forEach(p=>SNAP[p.id]=kunci(p));
+let SINK=Promise.resolve();
+function sinkron(){SINK=SINK.then(async()=>{for(const p of P){try{
+  if(p._baru){const r=await API.post('/api/spj',{id:p.id,j:p.j,mp_id:p.mp_id,...muatan(p)});
+    if(r.id!==p.id){const lama=p.id;p.docs.forEach((d,i)=>{const f=FILES[lama+'|'+i];if(f){FILES[r.id+'|'+i]=f;delete FILES[lama+'|'+i]}});if(S.sel===lama)S.sel=r.id;p.id=r.id}
+    p._baru=false;p._st='draf';SNAP[p.id]=kunci(p);continue}
+  const ed0=p._st==='draf'||p._st==='kembali';
+  if(ed0){const k=kunci(p);if(k!==SNAP[p.id]){await API.put('/api/spj/'+p.id,muatan(p));SNAP[p.id]=k}}
+  if(ed0&&p.st==='diajukan'){await API.post('/api/spj/'+p.id+'/ajukan',{sptjm:true,aicek:p.aicek||null});p._st='diajukan';toast('SPJ '+p.id+' diteruskan ke PPK')}
+ }catch(e){if(p.st==='diajukan'&&p._st!=='diajukan'){p.st=p._st;p.tglAju=null;p.aicek=null;render()}toast('Gagal menyimpan '+p.id+': '+e.message)}}})}
+const DESC={'Undangan':'Surat undangan bertanda tangan; memuat nama narasumber/peserta, tanggal, dan tempat.',
+ 'Daftar hadir':'Daftar hadir bertanda tangan sesuai tanggal kegiatan.',
+ 'Daftar penerima honor':'Nama, jabatan, besaran honor, potongan PPh 21, dan tanda tangan penerima.',
+ 'Resume kegiatan':'Ringkasan materi dan hasil kegiatan, ditandatangani PPTK.',
+ 'Kuitansi':'Kuitansi bermeterai sesuai nilai yang dibayarkan.',
+ 'Surat tugas':'Surat tugas yang ditandatangani pejabat berwenang.',
+ 'SPPD':'SPPD dengan cap dan tanda tangan di tempat tujuan.',
+ 'Bukti transportasi':'Tiket atau bukti perjalanan atas nama pelaksana tugas.',
+ 'Bukti penginapan':'Invoice hotel atas nama pelaksana tugas.',
+ 'Laporan perjalanan':'Laporan hasil perjalanan dinas.',
+ 'SPK / kontrak':'Surat perintah kerja atau kontrak yang sudah ditandatangani.',
+ 'Faktur / kuitansi':'Faktur atau kuitansi pembelian dari penyedia.',
+ 'BAST':'Berita acara serah terima barang.',
+ 'Foto barang':'Foto barang yang diterima, terlihat jelas.',
+ 'Kontrak':'Kontrak pekerjaan konstruksi beserta adendum (jika ada).',
+ 'Laporan progres fisik':'Laporan kemajuan pekerjaan pada periode termin.',
+ 'BA pemeriksaan':'Berita acara pemeriksaan pekerjaan oleh tim teknis.',
+ 'Foto progres':'Foto lapangan bertanggal (0%, 50%, 100% sesuai termin).',
+ 'Foto kegiatan':'Foto yang menunjukkan kegiatan berlangsung.'};
+const CEK={HON:['Nama narasumber di undangan sama dengan daftar penerima honor','Besaran honor sesuai Standar Biaya Umum','PPh 21 sudah dipotong dan tercantum di daftar penerima','Resume kegiatan sudah ditandatangani PPTK'],
+ SPPD:['Tanggal surat tugas, SPPD, dan tiket saling sesuai','Nama pada tiket dan bukti penginapan sama dengan surat tugas','Uang harian sesuai Standar Biaya Umum'],
+ BRG:['Barang yang diterima sesuai spesifikasi di SPK','Tanggal BAST tidak mendahului tanggal SPK','Harga sesuai Standar Satuan Harga'],
+ KON:['Progres fisik di laporan sama dengan data MONALISA','Nilai termin tidak melebihi progres fisik','Foto progres memuat tanggal pengambilan'],
+ MMR:['Jumlah porsi sesuai daftar hadir','Harga satuan sesuai Standar Satuan Harga','Foto kegiatan menunjukkan rapat berlangsung']};
+const ST=EA.ST;
+CEK.PDGU=['Tanggal surat tugas, SPPD, dan laporan perjalanan saling sesuai','Nama penerima sama dengan nama di surat tugas','Nilai rincian biaya sama dengan Tanda Bukti Kas','Uang harian dan transport sesuai Standar Biaya Umum'];
+CEK.BLGU=['Nilai nota/kuitansi sama dengan Tanda Bukti Kas','Harga sesuai Standar Satuan Harga','Pajak dipungut sesuai ketentuan'];
+Object.assign(DESC,{'Tanda Bukti Kas':'Tanda Bukti Kas bertanda tangan PA/KPA, bendahara, dan penerima.','Surat Tugas':'Surat tugas yang ditandatangani pejabat berwenang.',
+ 'Laporan Hasil Perjalanan':'Laporan hasil perjalanan dinas bertanda tangan pelaksana.','Rincian Biaya Perjalanan':'Rincian biaya perjalanan dinas sesuai SBU.',
+ 'Bukti transportasi/penginapan':'Tiket, boarding pass, atau invoice hotel.','Nota/kuitansi pembelian':'Nota atau kuitansi dari penyedia.','Dokumen pendukung lain':'Undangan, daftar hadir, foto, atau dokumen lain.'});
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+const isLengkap=p=>p.docs.every(d=>d.s==='ok');
+
+// ---------- state ----------
+P.forEach(p=>{if(!p.cek)p.cek=(CEK[p.j]||[]).map(()=>false);if(p.nk==null)p.nk='';if(p.st==='kembali'&&!p.catatan){p.catatan='Mohon perbaiki SPJ sesuai catatan verifikator.'}});
+const S={sel:(P.find(p=>p.st==='kembali')||P.find(p=>p.st==='draf')||P[0]||{}).id,q:'',chip:'todo',pick:null,err:{}};
+const $=id=>document.getElementById(id);
+const rp=v=>'Rp '+Math.round(v).toLocaleString('id-ID');
+const kb=b=>b>=1e6?(b/1e6).toFixed(1).replace('.',',')+' MB':Math.round(b/1e3)+' KB';
+const editable=p=>p.st==='draf'||p.st==='kembali';
+const nOk=p=>p.docs.filter(d=>d.s==='ok').length;
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2600)}
+document.querySelectorAll('.nav a.soon').forEach(a=>a.onclick=()=>toast('Menu "'+a.textContent.trim()+'" belum dibuat pada prototipe ini'));
+
+// ---------- list ----------
+const CH=[['todo','Perlu diunggah'],['sent','Sudah diajukan'],['all','Semua']];
+$('chips').innerHTML=CH.map(([k,n])=>`<button class="chip${k===S.chip?' on':''}" data-k="${k}">${n}</button>`).join('');
+document.querySelectorAll('#chips .chip').forEach(c=>c.onclick=()=>{S.chip=c.dataset.k;document.querySelectorAll('#chips .chip').forEach(x=>x.classList.toggle('on',x===c));renderList()});
+$('q').oninput=e=>{S.q=e.target.value.toLowerCase();renderList()};
+function renderList(){
+  let L=P.slice();
+  if(S.chip==='todo')L=L.filter(editable);
+  if(S.chip==='sent')L=L.filter(p=>!editable(p));
+  if(S.q)L=L.filter(p=>(p.nama+p.id).toLowerCase().includes(S.q));
+  L.sort((a,b)=>(editable(b)-editable(a))||(a.st==='kembali'?-1:0)||a.m-b.m);
+  $('plist').innerHTML=L.length?L.map(p=>{const k=nOk(p),t=p.docs.length,c=k===t?'var(--pri)':p.docs.some(d=>d.s==='ditolak')?'var(--red)':'var(--amber)';
+    const late=editable(p)&&!p.nyata&&!p.input&&p.m+1<NOW_M;
+    return `<div class="pi${p.id===S.sel?' on':''}" data-id="${p.id}"><b>${esc(p.nama)}</b><div class="meta">${esc(p.id)} · ${EA.MEK[p.mek||'GU']} · ${JENIS[p.j].n} · ${BLN[p.m-1]}</div>
+    <div class="row"><span class="pill ${ST[p.st][1]}"><span class="dot"></span>${ST[p.st][0]}</span>${late?'<span class="pill p-red">terlambat</span>':''}<div class="mini"><i style="width:${k/t*100}%;background:${c}"></i></div><small>${k}/${t}</small></div></div>`}).join('')
+    :'<div class="hint" style="padding:18px;text-align:center">Tidak ada paket.</div>';
+  document.querySelectorAll('.pi').forEach(e=>e.onclick=()=>{S.sel=e.dataset.id;S.err={};render()});
+}
+
+// ---------- detail ----------
+function cur(){return P.find(p=>p.id===S.sel)}
+function renderSteps(p){
+  const all=nOk(p)===p.docs.length, s=!editable(p)?3:all?3:2;
+  const it=[['1','Pilih paket'],['2','Unggah dokumen'],['3','Periksa & ajukan']];
+  $('steps').innerHTML=it.map(([n,t],i)=>`${i?'<span class="sep"></span>':''}<span class="step ${i+1<s||(!editable(p))?'done':''} ${i+1===s&&editable(p)?'on':''}"><i>${i+1<s||!editable(p)?'✓':n}</i>${t}</span>`).join('');
+}
+function renderDetail(){
+  const p=cur(),J=JENIS[p.j],ed=editable(p),late=ed&&!p.nyata&&!p.input&&p.m+1<NOW_M;
+  const batas=`10 ${BLN[p.m%12]} 2026`;
+  let ban='';
+  if(p.st==='kembali')ban=`<div class="banner b-red">↺ <div><b>Dikembalikan oleh verifikator.</b> ${esc(p.catatan)}</div></div>`;
+  else if(!ed)ban=`<div class="banner b-blue">🔒 <div><b>Sudah diajukan — ${ST[p.st][0].toLowerCase()}.</b> Dokumen terkunci selama proses verifikasi. Jika dikembalikan, dokumen dapat diperbaiki lagi.</div></div>`;
+  else if(late)ban=`<div class="banner b-amber">⏰ <div><b>Lewat batas unggah (${batas}).</b> Segera lengkapi dokumen; keterlambatan tercatat dan terlihat oleh Inspektorat.</div></div>`;
+  if(p.nyata&&ed&&p.st!=='kembali')ban=`<div class="banner b-blue">ⓘ <div><b>Draf input dari data uji coba ${p.gu} (hasil OCR).</b> Periksa dan perbaiki isian Tanda Bukti Kas, lengkapi dokumen yang belum ada, centang cek mandiri, lalu ajukan.</div></div>`+ban;
+  const kritis=p.j==='KON'&&p.keu-p.fisik>10;
+  $('detail').innerHTML=`<div class="head"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill ${ST[p.st][1]}"><span class="dot"></span>${ST[p.st][0]}</span><span class="kode">${p.id} · ${p.mp?"paket MONALISA: "+esc(p.mp):"sumber: MONALISA"}</span></div>
+   <h2>${esc(p.nama)}</h2><div class="hint">${esc(p.pptk)} · ${esc(OPDNAMA)}</div>
+   <div class="facts"><div class="fact"><small>JENIS BELANJA</small><b>${J.n}</b></div><div class="fact"><small>NILAI PAKET</small><b>${rp(p.nilai)}</b></div>
+   <div class="fact"><small>BULAN KEGIATAN</small><b>${BLN[p.m-1]} 2026</b></div><div class="fact"><small>BATAS UNGGAH</small><b style="${late?'color:var(--red)':''}">${batas}</b></div>
+   <div class="fact"><small>DATA MONALISA</small><b style="${kritis?'color:var(--red)':''}">${p.fisik!=null?`Fisik ${p.fisik}% · Keu ${p.keu}%`:'Non-fisik'}</b></div></div></div>
+   ${ban}
+   <div class="body">
+    ${tbkForm(p,ed)}<div class="sect"><span>DOKUMEN WAJIB · ${J.n.toUpperCase()}</span><span>${nOk(p)} / ${p.docs.length} TERUNGGAH</span></div>
+    <div class="docs">${p.docs.map((d,i)=>slot(p,d,i,ed)).join('')}</div>
+    <div class="sect" style="margin-top:18px"><span>CEK MANDIRI SEBELUM MENGAJUKAN</span><span>${p.cek.filter(Boolean).length} / ${p.cek.length}</span></div>
+    <div class="checks">${(CEK[p.j]||[]).map((c,i)=>`<label class="ck${p.cek[i]?' on':''}"><input type="checkbox" data-ck="${i}" ${p.cek[i]?'checked':''} ${ed?'':'disabled'}><span>${c}</span></label>`).join('')}</div>
+   </div>`;
+  bindDetail(p);
+}
+function tbkForm(p,ed){
+  if(!(p.nyata||p.input))return '';
+  const d=ed?'':'disabled';
+  return `<div class="sect"><span>DATA TANDA BUKTI KAS · DIINPUT BENDAHARA</span><span>${p.nyata?'terisi otomatis dari OCR · periksa kembali':''}</span></div>
+  <div class="tf"><label>No. BKU<input data-f="bku" value="${esc(p.bku)}" ${d}></label><label>Tanggal<input data-f="tgl" value="${esc(p.tgl)}" placeholder="29 Januari 2026" ${d}></label><label>Kode rekening<input data-f="kode" value="${esc(p.kode)}" ${d}></label>
+  <label>Penerima<input data-f="penerima" value="${esc(p.penerima)}" ${d}></label><label>Nilai (Rp)<input data-f="nilai" inputmode="numeric" value="${Math.round(p.nilai).toLocaleString('id-ID')}" ${d}></label><label>Paket MONALISA<input value="${esc(p.mp||'-')}" disabled></label>
+  <label class="w3">Uraian pembayaran<textarea data-f="nama" rows="2" ${d}>${esc(p.nama)}</textarea></label></div>`;
+}
+function slot(p,d,i,ed){
+  const f=FILES[p.id+'|'+i], err=S.err[i], isK=/Kuitansi/.test(d.n);
+  const cls=d.s==='ok'?'ok':d.s==='ditolak'?'bad':'';
+  const badge=d.s==='ok'?'<span class="pill p-green">✓ Terunggah</span>':d.s==='ditolak'?'<span class="pill p-red">! Dikembalikan</span>':'<span class="pill p-grey">Belum ada</span>';
+  let inner='';
+  if(f&&d.s==='ok'){
+    const th=f.type.startsWith('image/')&&f.url?`<img src="${f.url}" alt="">`:'PDF';
+    inner=`<div class="file"><div class="thumb" style="${th!=='PDF'?'background:#EEF1F5':''}">${th}</div><div class="fn"><b title="${esc(f.name)}">${esc(f.name)}</b><small>${f.src?'SPJ asli (hasil pindai)':kb(f.size)+(f.fake?' · contoh':' · baru diunggah')}</small></div>
+      <button class="lnk" data-view="${i}">Lihat</button>${ed?`<button class="lnk" data-pick="${i}">Ganti</button><button class="lnk red" data-del="${i}">Hapus</button>`:''}</div>`;
+    if(isK)inner+=`<div class="field">Nilai di kuitansi <input data-nk inputmode="numeric" placeholder="contoh: ${Math.round(p.nilai).toLocaleString('id-ID')}" value="${esc(p.nk)}" ${ed?'':'disabled'}></div>${p.nk&&+p.nk.replace(/\D/g,'')>p.nilai?`<div class="warn">⚠ Melebihi nilai paket (${rp(p.nilai)}). Periksa kembali.</div>`:''}`;
+  } else if(ed){
+    if(d.s==='ditolak')inner+=`<div class="note">Catatan verifikator: dokumen tidak sesuai, unggah ulang.</div>`;
+    inner+=`<div class="drop" data-drop="${i}"><b>Tarik berkas ke sini</b> atau klik untuk memilih<br><small>PDF, JPG, PNG · maks. 5 MB</small></div>`;
+  } else inner='<div class="hint">Tidak ada berkas.</div>';
+  if(err)inner+=`<div class="err">${err}</div>`;
+  return `<div class="slot ${cls}"><div class="t"><b>${i+1}. ${d.n}</b>${badge}</div><div class="d">${DESC[d.n]||''}</div>${inner}</div>`;
+}
+function accept(p,i,file){
+  const ok=/\.(pdf|jpe?g|png)$/i.test(file.name);
+  if(!ok){S.err[i]='Format tidak didukung. Gunakan PDF, JPG, atau PNG.';return render()}
+  if(file.size>5*1024*1024){S.err[i]='Ukuran '+kb(file.size)+' melebihi batas 5 MB.';return render()}
+  const k=p.id+'|'+i; if(FILES[k]&&FILES[k].url)URL.revokeObjectURL(FILES[k].url);
+  FILES[k]={name:file.name,size:file.size,type:file.type||'application/pdf',url:URL.createObjectURL(file),fake:false,at:new Date().toISOString()};
+  p.docs[i].s='ok';delete S.err[i];toast('"'+p.docs[i].n+'" terunggah');render();
+}
+function bindDetail(p){
+  document.querySelectorAll('[data-drop]').forEach(z=>{const i=+z.dataset.drop;
+    z.onclick=()=>{S.pick=i;$('picker').value='';$('picker').click()};
+    z.ondragover=e=>{e.preventDefault();z.classList.add('over')};
+    z.ondragleave=()=>z.classList.remove('over');
+    z.ondrop=e=>{e.preventDefault();z.classList.remove('over');const f=e.dataTransfer.files[0];if(f)accept(p,i,f)};});
+  document.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{S.pick=+b.dataset.pick;$('picker').value='';$('picker').click()});
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{const i=+b.dataset.del,k=p.id+'|'+i;if(FILES[k]&&FILES[k].url)URL.revokeObjectURL(FILES[k].url);delete FILES[k];p.docs[i].s='kosong';toast('Berkas dihapus');render()});
+  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{const f=FILES[p.id+'|'+b.dataset.view];if(f.src)window.open(encodeURI(f.src)+'#page='+f.page,'_blank');else if(f.url)window.open(f.url,'_blank');else toast(f.fake?'Berkas contoh tidak memiliki isi pada prototipe':'Isi berkas hanya tersedia pada sesi saat diunggah (prototipe)')});
+  document.querySelectorAll('[data-ck]').forEach(c=>c.onchange=()=>{p.cek[+c.dataset.ck]=c.checked;render()});
+  document.querySelectorAll('[data-f]').forEach(el=>el.onchange=()=>{const f=el.dataset.f,v=el.value.trim();if(f==='nilai')p.nilai=+v.replace(/\D/g,'')||0;else p[f]=v;if(f==='tgl'){const b=BLN.findIndex(x=>v.toLowerCase().includes(x.toLowerCase().slice(0,3)));if(b>=0)p.m=b+1}toast('Isian tersimpan');render()});
+  const nk=document.querySelector('[data-nk]');if(nk)nk.onchange=()=>{p.nk=nk.value;render()};
+}
+$('picker').onchange=e=>{const f=e.target.files[0];if(f&&S.pick!=null)accept(cur(),S.pick,f)};
+
+// ---------- bottom bar & submit ----------
+function renderBar(){
+  const p=cur(),ed=editable(p),k=nOk(p),t=p.docs.length,c=p.cek.filter(Boolean).length,ready=ed&&k===t&&c===p.cek.length;
+  const why=!ed?'Paket sudah diajukan':k<t?`Lengkapi ${t-k} dokumen lagi`:c<p.cek.length?`Centang ${p.cek.length-c} butir cek mandiri`:'Siap diajukan ke PPK';
+  $('bar').innerHTML=`<div class="pg"><b>${k}/${t} dokumen</b><div class="track"><i style="width:${k/t*100}%"></i></div><span class="hint" style="${ready?'color:var(--pri);font-weight:700':''}">${why}</span></div>
+   <button class="btn btn-out" id="bDraf" ${ed?'':'disabled'}>Simpan draf</button><button class="btn btn-pri" id="bAju" ${ready?'':'disabled'}>Ajukan verifikasi →</button>`;
+  $('bDraf').onclick=()=>toast('Draf tersimpan (simulasi)');
+  $('bAju').onclick=openConfirm;
+}
+function openConfirm(){
+  const p=cur();
+  $('modal').innerHTML=`<div class="mh"><h3>Ajukan SPJ untuk diverifikasi?</h3></div><div class="mb">
+   <dl class="sum"><dt>Paket</dt><dd>${esc(p.nama)}</dd><dt>Kode</dt><dd>${esc(p.id)}</dd><dt>Nilai</dt><dd>${rp(p.nilai)}</dd><dt>Dokumen</dt><dd>${p.docs.length} berkas lengkap</dd><dt>Diteruskan ke</dt><dd>PPK ${OPDNAMA}</dd></dl>
+   <label class="ck" id="ckS"><input type="checkbox" id="sptjm"><span>Saya menyatakan seluruh dokumen yang diunggah <b>benar, sah, dan sesuai</b> dengan pelaksanaan kegiatan, serta bertanggung jawab penuh atas kebenarannya.</span></label></div>
+   <div class="mf"><button class="btn btn-out" id="mBatal">Batal</button><button class="btn btn-pri" id="mOk" disabled>Ajukan sekarang</button></div>`;
+  $('ovl').classList.add('on');
+  $('sptjm').onchange=e=>{$('mOk').disabled=!e.target.checked;$('ckS').classList.toggle('on',e.target.checked)};
+  $('mBatal').onclick=()=>$('ovl').classList.remove('on');
+  $('mOk').onclick=()=>{p.st='diajukan';p.tglAju=new Date().toISOString();
+    $('modal').innerHTML=`<div class="okbox"><div class="big">✓</div><h3 style="margin:0 0 4px">SPJ berhasil diajukan</h3><div class="hint">${esc(p.nama)} · ${esc(p.id)}</div>
+     <div class="tl"><div class="d"><i></i>Diunggah bendahara</div><div class="c"><i></i>Verifikasi PPK</div><div><i></i>Pengesahan PA/KPA</div><div><i></i>SP2D</div></div>
+     <div class="hint" style="margin-top:8px">PPK akan menerima notifikasi. Status dapat dipantau di dasbor.</div></div>
+     <div class="mf"><button class="btn btn-out" onclick="document.getElementById('ovl').classList.remove('on')">Tutup</button><button class="btn btn-pri" id="mNext">Paket berikutnya</button></div>`;
+    $('mNext').onclick=()=>{$('ovl').classList.remove('on');const n=P.find(x=>editable(x));if(n)S.sel=n.id;S.err={};render()};
+    render();};
+}
+$('ovl').onclick=e=>{if(e.target===$('ovl'))$('ovl').classList.remove('on')};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('ovl').classList.remove('on')});
+
+function renderBulk(){const L=P.filter(p=>editable(p)&&isLengkap(p)),b=$('bMassal');b.style.display=L.length?'':'none';b.textContent=`Ajukan semua yang lengkap (${L.length})`}
+$('bMassal').onclick=()=>{const L=P.filter(p=>editable(p)&&isLengkap(p));
+  $('modal').innerHTML=`<div class="mh"><h3>Ajukan ${L.length} SPJ sekaligus?</h3></div><div class="mb"><p style="margin:0 0 10px">SPJ berikut sudah lengkap dokumennya. Setelah diajukan, SPJ dikirim ke PPK dan dapat diperiksa Inspektorat.</p>
+   <div style="max-height:190px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:4px 10px;margin-bottom:10px">${L.map(p=>`<div style="font-size:12px;padding:4px 0;border-bottom:1px solid #F0F2F5">${p.id} · ${rp(p.nilai)} · ${esc(p.nama).slice(0,70)}</div>`).join('')}</div>
+   <label class="ck" id="ckM"><input type="checkbox" id="sptjmM"><span>Saya menyatakan seluruh dokumen yang diunggah <b>benar, sah, dan sesuai</b> dengan pelaksanaan kegiatan, dan cek mandiri sudah dilakukan.</span></label></div>
+   <div class="mf"><button class="btn btn-out" id="mB">Batal</button><button class="btn btn-pri" id="mY" disabled>Ajukan ${L.length} SPJ</button></div>`;
+  $('ovl').classList.add('on');$('sptjmM').onchange=e=>{$('mY').disabled=!e.target.checked;$('ckM').classList.toggle('on',e.target.checked)};$('mB').onclick=()=>$('ovl').classList.remove('on');
+  $('mY').onclick=()=>{const now=new Date().toISOString();L.forEach(p=>{p.st='diajukan';p.tglAju=now;p.cek=p.cek.map(()=>true)});$('ovl').classList.remove('on');toast(L.length+' SPJ diajukan ke PPK dan dapat diperiksa Inspektorat');render()}};
+$('bBaru').onclick=()=>{const mps=[...new Set(SES.opd==='PK'?EA.MP_PK:P.filter(p=>!p.input&&!p.nyata).map(p=>p.nama))];
+  const js=Object.keys(JENIS).filter(k=>SES.opd==='PK'?/GU$/.test(k):!/GU$/.test(k));
+  $('modal').innerHTML=`<div class="mh"><h3>Input SPJ baru</h3></div><div class="mb"><div class="tf" style="grid-template-columns:1fr 1fr">
+   <label class="w3">Paket dari MONALISA<select id="nMp">${mps.map(m=>`<option>${esc(m)}</option>`).join('')}</select></label>
+   <label>Jenis belanja<select id="nJ">${js.map(k=>`<option value="${k}">${JENIS[k].n}</option>`).join('')}</select></label>
+   <label>No. BKU<input id="nB"></label><label>Tanggal<input id="nT" placeholder="contoh: 20 November 2026"></label><label>Kode rekening<input id="nK" placeholder="5.1.02.04.001.00005"></label>
+   <label>Penerima<input id="nP"></label><label>Nilai (Rp)<input id="nN" inputmode="numeric"></label>
+   <label class="w3">Uraian pembayaran<textarea id="nU" rows="2"></textarea></label></div><div class="hint">Setelah disimpan, unggah dokumen wajibnya lalu ajukan.</div></div>
+   <div class="mf"><button class="btn btn-out" id="nX">Batal</button><button class="btn btn-pri" id="nS">Simpan &amp; unggah dokumen</button></div>`;
+  $('ovl').classList.add('on');$('nX').onclick=()=>$('ovl').classList.remove('on');
+  $('nS').onclick=()=>{const u=$('nU').value.trim(),n=+$('nN').value.replace(/\D/g,'');if(!u||!n){toast('Isi uraian dan nilai terlebih dahulu');return}
+    const j=$('nJ').value,t=$('nT').value.trim(),b=BLN.findIndex(x=>t.toLowerCase().includes(x.toLowerCase().slice(0,3)));
+    const id=SES.opd+'-SPJ-'+String(P.filter(p=>p.input).length+1).padStart(3,'0');
+    P.push({id,nama:u,opd:SES.opd,j,m:b>=0?b+1:NOW_M,nilai:n,st:'draf',pptk:'Input bendahara',fisik:null,keu:null,mp:$('nMp').value,bku:$('nB').value.trim(),tgl:t,kode:$('nK').value.trim(),penerima:$('nP').value.trim(),input:true,
+      docs:JENIS[j].docs.map(d=>({n:d,s:'kosong'})),cek:(CEK[j]||[]).map(()=>false),nk:''});
+    S.sel=id;$('ovl').classList.remove('on');toast('SPJ baru tersimpan sebagai draf');render()}};
+function render(){if(!P.length){document.querySelector('.layout').innerHTML='<div class="card panel">Belum ada paket untuk perangkat daerah ini.</div>';return}const p=cur();renderSteps(p);renderList();renderDetail();renderBar();renderBulk()}
+document.getElementById('opdFoot').textContent=OPDNAMA;document.getElementById('opdHint').textContent=OPDNAMA;document.getElementById('nmFoot').textContent=ME.nama;
+
+/* Portal Bendahara: unggah scan ke server + Asisten AI (OCR offline di server.py).
+   Prinsip: AI mengusulkan, bendahara memutuskan. Dimuat setelah skrip utama bendahara.html. */
+const AIX = { upload: false, ai: false, busy: {}, cekJalan: null, prog: '' };
+const norm = v => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]/g, '');
+const fkey = (p, i) => p.id + '|' + i;
+const parts = f => f ? (f.parts || [f]) : [];
+const srcOf = f => !f ? null : f.path ? { path: f.path, page: 1 } : f.src ? { path: f.src, page: f.page || 1 } : null;
+const SLOTMAP = { TBK: ['Tanda Bukti Kas', 'Kuitansi', 'Faktur / kuitansi'], ST: ['Surat Tugas', 'Surat tugas'], SPPD: ['SPPD'],
+  LAPORAN: ['Laporan Hasil Perjalanan', 'Laporan perjalanan'], RINCIAN: ['Rincian Biaya Perjalanan'],
+  BUKTI: ['Bukti transportasi/penginapan', 'Bukti transportasi', 'Bukti penginapan'], NOTA: ['Nota/kuitansi pembelian', 'Faktur / kuitansi', 'Kuitansi'],
+  UNDANGAN: ['Undangan', 'Dokumen pendukung lain'], HADIR: ['Daftar hadir', 'Dokumen pendukung lain'], LAIN: ['Dokumen pendukung lain', 'Foto kegiatan', 'Foto barang', 'Foto progres'] };
+function slotFor(p, tp) { for (const n of (SLOTMAP[tp] || [])) { const i = p.docs.findIndex(d => d.n === n); if (i >= 0) return i } return -1 }
+
+document.head.insertAdjacentHTML('beforeend', `<style>
+.ai{border-radius:7px;padding:6px 9px;font-size:11.5px;line-height:1.4}.ai.ok{background:#EEF4FC;color:#1F4570}.ai.warn{background:#FFF4E0;color:#7A5410}
+.aizone{border:1.5px dashed #9BB8E0;background:linear-gradient(135deg,#F2F7FD,#F5FBF7);border-radius:11px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:2px;margin-bottom:14px}
+.aizone:hover,.aizone.over{border-color:var(--blue);background:#EAF2FB}.aizone b{color:var(--blue);font-size:13px}.aizone span{font-size:12px;color:var(--muted)}
+.aibox{border:1px solid #CFE0F3;background:#F4F8FD;border-radius:10px;padding:11px 13px;margin-bottom:14px}.aibox table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px}
+.aibox td{padding:4px 6px;border-bottom:1px solid #E1EAF5}.aibox td:first-child{color:var(--muted);width:120px}.aibox tr.beda td{background:#FFF4E0}
+.aicek{display:flex;flex-direction:column;gap:6px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}
+.aicek div{display:flex;gap:9px;align-items:center;font-size:12.5px}.aicek i{width:20px;height:20px;border-radius:50%;color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:800;flex:none}
+.aicek .btn{align-self:flex-start;margin-top:4px}
+.prog{height:8px;background:#EEF1F5;border-radius:8px;overflow:hidden;margin-top:10px}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--pri2))}
+.aitab{width:100%;border-collapse:collapse}.aitab td{padding:7px 4px;border-bottom:1px solid #F0F2F5;vertical-align:top;font-size:12.5px}.aitab select{border:1px solid var(--line);border-radius:7px;padding:5px;max-width:230px}
+.aist{display:inline-flex;gap:5px;align-items:center;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:700;margin-left:8px}
+</style>`);
+
+// ---------- komunikasi dengan server ----------
+async function shrink(f) {
+  if (!/^image\//.test(f.type) || f.size < 1.2e6) return f;
+  try {
+    const img = await createImageBitmap(f), s = Math.min(1, 2000 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    return new File([b], f.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' });
+  } catch (e) { return f }
+}
+async function kirim(spj, f) {
+  const r = await fetch(`/api/upload?spj=${encodeURIComponent(spj)}&name=${encodeURIComponent(f.name)}`, { method: 'POST', body: f, headers: { 'Content-Type': f.type || 'application/octet-stream' } });
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || 'gagal'); return j;
+}
+async function baca(path, page) {
+  const r = await fetch(`/api/ocr?path=${encodeURIComponent(path)}&page=${page || 1}`, { method: 'POST' });
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || 'gagal'); return j;
+}
+const ocrOf = r => ({ tipe: r.tipe, dok: r.dok, fields: r.fields || null, total: r.total || null, teks: (r.teks || '').slice(0, 1500) });
+
+// ---------- unggah per kotak (beberapa berkas, kamera) ----------
+$('picker').multiple = true;
+const camEl = Object.assign(document.createElement('input'), { type: 'file', accept: 'image/*', hidden: true }); camEl.setAttribute('capture', 'environment'); document.body.appendChild(camEl);
+const bulkEl = Object.assign(document.createElement('input'), { type: 'file', multiple: true, accept: '.pdf,.jpg,.jpeg,.png', hidden: true }); document.body.appendChild(bulkEl);
+function pilih(i, append, cam) { S.pick = i; S.append = append; const el = cam ? camEl : $('picker'); el.value = ''; el.click() }
+async function terimaBanyak(fs) { const p = cur(); if (!fs.length || S.pick == null) return; for (let n = 0; n < fs.length; n++) await accept(p, S.pick, fs[n], S.append || n > 0) }
+$('picker').onchange = e => terimaBanyak([...e.target.files]);
+camEl.onchange = e => terimaBanyak([...e.target.files]);
+bulkEl.onchange = () => aiPilah(cur(), [...bulkEl.files]);
+
+async function accept(p, i, file, append) {
+  if (!/\.(pdf|jpe?g|png)$/i.test(file.name)) { S.err[i] = 'Format tidak didukung. Gunakan PDF, JPG, atau PNG.'; return render() }
+  delete S.err[i]; const k = fkey(p, i); let entry;
+  if (AIX.upload) {
+    AIX.busy[k] = 'Mengunggah…'; render();
+    try {
+      const f2 = await shrink(file);
+      if (f2.size > 5 * 1024 * 1024) { delete AIX.busy[k]; S.err[i] = 'Ukuran ' + kb(f2.size) + ' melebihi batas 5 MB.'; return render() }
+      const j = await kirim(p.id, f2);
+      entry = { name: f2.name, size: j.size, type: f2.type || 'application/pdf', path: j.path, at: new Date().toISOString() };
+    } catch (e) { delete AIX.busy[k]; S.err[i] = 'Gagal mengunggah: ' + e.message; return render() }
+  } else {
+    if (file.size > 5 * 1024 * 1024) { S.err[i] = 'Ukuran ' + kb(file.size) + ' melebihi batas 5 MB.'; return render() }
+    entry = { name: file.name, size: file.size, type: file.type || 'application/pdf', url: URL.createObjectURL(file), fake: false, at: new Date().toISOString() };
+  }
+  const old = FILES[k];
+  if (append && old && p.docs[i].s === 'ok' && !old.fake) { const ps = parts(old).map(x => ({ ...x, parts: undefined, ocr: undefined })); ps.push(entry); FILES[k] = { ...ps[0], parts: ps, ocr: old.ocr } }
+  else FILES[k] = { ...entry, parts: [entry] };
+  p.docs[i].s = 'ok'; delete AIX.busy[k]; toast('"' + p.docs[i].n + '" terunggah'); render();
+  if (AIX.ai && entry.path && !(append && old && old.ocr)) aiBacaSlot(p, i);
+}
+async function aiBacaSlot(p, i, quiet) {
+  const k = fkey(p, i), f = FILES[k], s = srcOf(f); if (!s) return;
+  AIX.busy[k] = '✨ AI membaca…'; if (!quiet) render();
+  try { const r = await baca(s.path, s.page); f.ocr = ocrOf(r); if (r.tipe === 'TBK' && r.fields && /Bukti Kas|Kuitansi|Faktur/.test(p.docs[i].n)) p.aiSaran = r.fields }
+  catch (e) { f.ocr = { error: e.message } }
+  delete AIX.busy[k]; if (!quiet) render();
+}
+
+// ---------- tampilan kotak dokumen ----------
+function slot(p, d, i, ed) {
+  const k = fkey(p, i), f = FILES[k], err = S.err[i], busy = AIX.busy[k], isK = /Kuitansi/.test(d.n);
+  const cls = d.s === 'ok' ? 'ok' : d.s === 'ditolak' ? 'bad' : '';
+  const badge = busy ? `<span class="pill p-blue">${busy}</span>` : d.s === 'ok' ? '<span class="pill p-green">✓ Terunggah</span>' : d.s === 'ditolak' ? '<span class="pill p-red">! Dikembalikan</span>' : '<span class="pill p-grey">Belum ada</span>';
+  let inner = '';
+  if (f && d.s === 'ok') {
+    inner = parts(f).map((x, n) => {
+      const th = /^image\//.test(x.type) && (x.url || x.path) ? `<img src="${esc(x.url || encodeURI(x.path))}" alt="">` : 'PDF';
+      return `<div class="file"><div class="thumb" style="${th !== 'PDF' ? 'background:#EEF1F5' : ''}">${th}</div><div class="fn"><b title="${esc(x.name)}">${esc(x.name)}</b><small>${x.src ? 'SPJ asli (hasil pindai)' : kb(x.size) + (x.fake ? ' · contoh' : x.path ? ' · tersimpan di server' : ' · hanya di sesi ini')}</small></div>
+        <button class="lnk" data-view="${i}" data-part="${n}">Lihat</button>${ed && n === 0 ? `<button class="lnk" data-pick="${i}">Ganti</button>` : ''}${ed ? `<button class="lnk red" data-del="${i}" data-part="${n}">Hapus</button>` : ''}</div>`;
+    }).join('');
+    if (ed) inner += `<div style="display:flex;gap:12px;flex-wrap:wrap"><button class="lnk" data-add="${i}">+ Tambah halaman/berkas</button><button class="lnk" data-cam="${i}" data-add2="1">📷 Foto dari kamera</button>${AIX.ai && srcOf(f) && !busy ? `<button class="lnk" data-ai="${i}">✨ Baca dengan AI</button>` : ''}</div>`;
+    if (f.ocr && f.ocr.tipe) {
+      const cocok = f.ocr.tipe === 'LAIN' || (SLOTMAP[f.ocr.tipe] || []).includes(d.n);
+      inner += cocok ? `<div class="ai ok">✨ AI: dikenali sebagai <b>${esc(f.ocr.dok)}</b>${f.ocr.total ? ` · total ${rp(f.ocr.total)}` : ''}${f.ocr.fields && f.ocr.fields.nilai ? ` · nilai ${rp(f.ocr.fields.nilai)}` : ''}</div>`
+        : `<div class="ai warn">⚠ AI: berkas ini tampaknya <b>${esc(f.ocr.dok)}</b>, bukan ${esc(d.n)}. Periksa kembali.</div>`;
+    } else if (f.ocr && f.ocr.error) inner += `<div class="ai warn">AI gagal membaca: ${esc(f.ocr.error)}</div>`;
+    if (isK) inner += `<div class="field">Nilai di kuitansi <input data-nk inputmode="numeric" placeholder="contoh: ${Math.round(p.nilai).toLocaleString('id-ID')}" value="${esc(p.nk)}" ${ed ? '' : 'disabled'}></div>${p.nk && +String(p.nk).replace(/\D/g, '') > p.nilai ? `<div class="warn">⚠ Melebihi nilai paket (${rp(p.nilai)}). Periksa kembali.</div>` : ''}`;
+  } else if (ed) {
+    if (d.s === 'ditolak') inner += `<div class="note">Catatan verifikator: dokumen tidak sesuai, unggah ulang.</div>`;
+    inner += busy ? `<div class="drop">${busy}</div>` : `<div class="drop" data-drop="${i}"><b>Tarik berkas ke sini</b> atau klik untuk memilih<br><small>PDF, JPG, PNG · maks. 5 MB · boleh beberapa berkas</small></div><button class="lnk" data-cam="${i}" style="align-self:flex-start">📷 Foto dari kamera</button>`;
+  } else inner = '<div class="hint">Tidak ada berkas.</div>';
+  if (err) inner += `<div class="err">${err}</div>`;
+  return `<div class="slot ${cls}"><div class="t"><b>${i + 1}. ${d.n}</b>${badge}</div><div class="d">${DESC[d.n] || ''}</div>${inner}</div>`;
+}
+
+// ---------- isian Tanda Bukti Kas + saran AI ----------
+function saranBox(p, ed) {
+  const s = p.aiSaran; if (!s || !ed) return '';
+  const cur = k => k === 'uraian' ? p.nama : k === 'nilai' ? p.nilai : p[k];
+  const rows = [['bku', 'No. BKU'], ['tgl', 'Tanggal'], ['kode', 'Kode rekening'], ['penerima', 'Penerima'], ['nilai', 'Nilai'], ['uraian', 'Uraian']].filter(([k]) => s[k] != null && s[k] !== '');
+  if (!rows.length) return '';
+  return `<div class="aibox"><b>✨ Saran AI dari scan Tanda Bukti Kas</b><div class="hint">Periksa sebelum dipakai. Baris kuning berbeda dengan isian sekarang.</div>
+   <table>${rows.map(([k, l]) => { const beda = k === 'nilai' ? +s.nilai !== +p.nilai : norm(s[k]) !== norm(cur(k)); return `<tr class="${beda ? 'beda' : ''}"><td>${l}</td><td>${k === 'nilai' ? rp(s[k]) : esc(s[k])}</td></tr>` }).join('')}</table>
+   <div style="display:flex;gap:8px;margin-top:9px"><button class="btn btn-pri" id="aiPakai">Pakai saran AI</button><button class="btn btn-out" id="aiAbaikan">Abaikan</button></div></div>`;
+}
+function terapkanSaran(p) {
+  const s = p.aiSaran; if (!s) return;
+  if (s.bku != null) p.bku = String(s.bku); if (s.kode) p.kode = s.kode; if (s.penerima) p.penerima = s.penerima; if (s.nilai) p.nilai = s.nilai; if (s.uraian) p.nama = s.uraian;
+  if (s.tgl) { p.tgl = s.tgl; const b = BLN.findIndex(x => s.tgl.toLowerCase().includes(x.toLowerCase())); if (b >= 0) p.m = b + 1 }
+  p.aiSaran = null; toast('Saran AI diterapkan. Tetap periksa kembali.'); render();
+}
+function tbkForm(p, ed) {
+  if (!(p.nyata || p.input)) return '';
+  const d = ed ? '' : 'disabled';
+  return `<div class="sect"><span>DATA TANDA BUKTI KAS · DIINPUT BENDAHARA</span><span>${p.nyata ? 'terisi otomatis dari OCR · periksa kembali' : ''}</span></div>${saranBox(p, ed)}
+  <div class="tf"><label>No. BKU<input data-f="bku" value="${esc(p.bku)}" ${d}></label><label>Tanggal<input data-f="tgl" value="${esc(p.tgl)}" placeholder="29 Januari 2026" ${d}></label><label>Kode rekening<input data-f="kode" value="${esc(p.kode)}" ${d}></label>
+  <label>Penerima<input data-f="penerima" value="${esc(p.penerima)}" ${d}></label><label>Nilai (Rp)<input data-f="nilai" inputmode="numeric" value="${Math.round(p.nilai).toLocaleString('id-ID')}" ${d}></label><label>Mekanisme pembayaran<select data-f="mek" ${d}>${Object.entries(EA.MEK).map(([k, n]) => `<option value="${k}" ${(p.mek || 'GU') === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label>Paket MONALISA<input value="${esc(p.mp || '-')}" disabled></label>
+  <label class="w3">Uraian pembayaran<textarea data-f="nama" rows="2" ${d}>${esc(p.nama)}</textarea></label></div>`;
+}
+
+// ---------- cek AI ----------
+function cekAI(p) {
+  const L = [], F = i => FILES[fkey(p, i)], idx = n => p.docs.findIndex(d => d.n === n);
+  p.docs.forEach((d, i) => { const f = F(i); if (f && f.ocr && f.ocr.tipe && f.ocr.tipe !== 'LAIN' && !(SLOTMAP[f.ocr.tipe] || []).includes(d.n)) L.push(['warn', `Kotak "${d.n}" berisi ${f.ocr.dok}`]) });
+  const iT = p.docs.findIndex(d => /Bukti Kas|^Kuitansi$|Faktur/.test(d.n)), fT = iT >= 0 ? F(iT) : null, tb = fT && fT.ocr && fT.ocr.fields;
+  if (tb && tb.nilai) L.push([tb.nilai === p.nilai ? 'ok' : 'warn', `Nilai di Tanda Bukti Kas ${rp(tb.nilai)} ${tb.nilai === p.nilai ? 'sama dengan' : 'berbeda dengan'} isian ${rp(p.nilai)}`]);
+  else if (iT >= 0) L.push(['na', 'Nilai Tanda Bukti Kas belum dibaca AI']);
+  const iR = idx('Rincian Biaya Perjalanan'), fR = iR >= 0 ? F(iR) : null;
+  if (iR >= 0) { if (fR && fR.ocr && fR.ocr.total) L.push([fR.ocr.total === p.nilai ? 'ok' : 'warn', `Total rincian biaya ${rp(fR.ocr.total)} ${fR.ocr.total === p.nilai ? 'sama dengan' : 'berbeda dengan'} nilai SPJ`]); else L.push(['na', 'Total rincian biaya belum dibaca AI']) }
+  const iS = idx('Surat Tugas'), fS = iS >= 0 ? F(iS) : null;
+  if (iS >= 0 && p.penerima) {
+    const tok = String(p.penerima).toUpperCase().replace(/[^A-Z ]/g, ' ').split(/\s+/).filter(w => w.length >= 4);
+    if (fS && fS.ocr && fS.ocr.teks) { const t = fS.ocr.teks.toUpperCase().replace(/[^A-Z]/g, ''); const hit = tok.some(w => t.includes(w.slice(0, 6))); L.push([hit ? 'ok' : 'warn', `Nama penerima ${hit ? 'ditemukan' : 'tidak ditemukan'} di Surat Tugas`]) }
+    else L.push(['na', 'Surat Tugas belum dibaca AI']);
+  }
+  if (tb && tb.tgl && p.tgl) L.push([norm(tb.tgl) === norm(p.tgl) ? 'ok' : 'warn', `Tanggal di Tanda Bukti Kas (${tb.tgl}) ${norm(tb.tgl) === norm(p.tgl) ? 'sama dengan' : 'berbeda dengan'} isian`]);
+  const kosong = p.docs.filter(d => d.s !== 'ok').length; if (kosong) L.push(['warn', `${kosong} dokumen wajib belum diunggah`]);
+  return L;
+}
+function cekPanel(p, ed) {
+  if (!(p.nyata || p.input || AIX.ai)) return '';
+  const L = cekAI(p), run = AIX.cekJalan === p.id, ic = { ok: ['✓', '#2F8F4E'], warn: ['!', '#C98A12'], na: ['–', '#8A95A5'] };
+  return `<div class="sect" style="margin-top:18px"><span>✨ CEK AI SEBELUM MENGAJUKAN</span><span>${L.filter(x => x[0] === 'warn').length} perlu perhatian</span></div>
+   <div class="aicek">${L.map(([s, t]) => `<div><i style="background:${ic[s][1]}">${ic[s][0]}</i>${esc(t)}</div>`).join('') || '<div class="hint">Belum ada yang dapat dicek.</div>'}
+   ${AIX.ai && ed ? `<button class="btn btn-out" id="aiCek" ${run ? 'disabled' : ''}>${run ? 'AI sedang membaca dokumen… ' + AIX.prog : '✨ Jalankan cek AI (baca semua dokumen)'}</button>` : ''}
+   ${!AIX.ai ? '<div class="hint">Asisten AI tidak aktif. Jalankan aplikasi lewat Jalankan.bat.</div>' : ''}</div>`;
+}
+async function jalankanCekAI(p) {
+  AIX.cekJalan = p.id;
+  const todo = p.docs.map((d, i) => i).filter(i => { const f = FILES[fkey(p, i)]; return f && srcOf(f) && !(f.ocr && f.ocr.tipe) });
+  for (let n = 0; n < todo.length; n++) { AIX.prog = `(${n + 1}/${todo.length})`; render(); await aiBacaSlot(p, todo[n], true) }
+  AIX.cekJalan = null; AIX.prog = ''; render(); toast('Cek AI selesai');
+}
+
+// ---------- unggah sekaligus: AI memilah ----------
+async function aiPilah(p, fs) {
+  fs = fs.filter(f => /\.(pdf|jpe?g|png)$/i.test(f.name)); if (!fs.length) return;
+  const hasil = []; $('ovl').classList.add('on');
+  for (let n = 0; n < fs.length; n++) {
+    $('modal').innerHTML = `<div class="mh"><h3>✨ AI memilah dokumen</h3></div><div class="mb"><div class="hint">Membaca ${n + 1} dari ${fs.length}: ${esc(fs[n].name)}</div><div class="prog"><i style="width:${(n + 0.3) / fs.length * 100}%"></i></div></div>`;
+    try { const f2 = await shrink(fs[n]); const up = await kirim(p.id, f2); const r = await baca(up.path, 1); hasil.push({ f: f2, up, r, slot: slotFor(p, r.tipe) }) }
+    catch (e) { hasil.push({ f: fs[n], err: e.message, slot: -1 }) }
+  }
+  $('modal').innerHTML = `<div class="mh"><h3>✨ Usulan penempatan oleh AI</h3></div><div class="mb"><div class="hint" style="margin-bottom:8px">Periksa usulan, ubah bila perlu, lalu simpan.</div>
+   <table class="aitab">${hasil.map((h, n) => `<tr><td><b>${esc(h.f.name)}</b><div class="hint">${h.err ? 'Gagal: ' + esc(h.err) : 'AI mengenali: ' + h.r.dok}</div></td><td>${h.err ? '' : `<select data-h="${n}"><option value="-1">— jangan disimpan —</option>${p.docs.map((d, i) => `<option value="${i}" ${i === h.slot ? 'selected' : ''}>${i + 1}. ${d.n}</option>`).join('')}</select>`}</td></tr>`).join('')}</table></div>
+   <div class="mf"><button class="btn btn-out" id="pX">Batal</button><button class="btn btn-pri" id="pS">Simpan penempatan</button></div>`;
+  $('pX').onclick = () => $('ovl').classList.remove('on');
+  $('pS').onclick = () => {
+    document.querySelectorAll('[data-h]').forEach(s => {
+      const h = hasil[+s.dataset.h], i = +s.value; if (i < 0) return;
+      const k = fkey(p, i), e = { name: h.f.name, size: h.up.size, type: h.f.type || 'application/pdf', path: h.up.path, at: new Date().toISOString() }, old = FILES[k];
+      if (old && p.docs[i].s === 'ok' && !old.fake) { const ps = parts(old).map(x => ({ ...x, parts: undefined, ocr: undefined })); ps.push(e); FILES[k] = { ...ps[0], parts: ps, ocr: old.ocr } }
+      else FILES[k] = { ...e, parts: [e], ocr: ocrOf(h.r) };
+      p.docs[i].s = 'ok'; if (h.r.tipe === 'TBK' && h.r.fields) p.aiSaran = h.r.fields;
+    });
+    $('ovl').classList.remove('on'); toast('Dokumen ditempatkan. Periksa saran AI dan cek AI.'); render();
+  };
+}
+
+// ---------- detail SPJ ----------
+function renderDetail() {
+  const p = cur(), J = JENIS[p.j], ed = editable(p), late = ed && !p.nyata && !p.input && p.m + 1 < NOW_M;
+  const batas = `10 ${BLN[p.m % 12]} 2026`;
+  let ban = '';
+  if (p.st === 'kembali') ban = `<div class="banner b-red">↺ <div><b>Dikembalikan oleh verifikator.</b> ${esc(p.catatan)}</div></div>`;
+  else if (p.st === 'bendahara') ban = `<div class="banner b-amber">💳 <div style="flex:1"><b>Sudah disahkan PA/KPA.</b> Setelah SP2D terbit, catat nomornya:<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><input id="noSp2d" placeholder="Nomor SP2D" style="border:1px solid #E3E8EF;border-radius:7px;padding:6px 8px"><button class="btn btn-pri" id="bSp2d">Catat SP2D</button></div></div></div>`;
+  else if (!ed) ban = `<div class="banner b-blue">🔒 <div><b>Sudah diajukan — ${ST[p.st][0].toLowerCase()}.</b> Dokumen terkunci selama proses verifikasi.${p.no_sp2d ? ' Nomor SP2D: ' + esc(p.no_sp2d) + '.' : ' Jika dikembalikan, dokumen dapat diperbaiki lagi.'}</div></div>`;
+  else if (late) ban = `<div class="banner b-amber">⏰ <div><b>Lewat batas unggah (${batas}).</b> Segera lengkapi dokumen; keterlambatan tercatat dan terlihat oleh Inspektorat.</div></div>`;
+  if (p.nyata && ed && p.st !== 'kembali') ban = `<div class="banner b-blue">ⓘ <div><b>Draf input dari data uji coba ${p.gu} (hasil OCR).</b> Periksa dan perbaiki isian Tanda Bukti Kas, lengkapi dokumen yang belum ada, jalankan cek AI, lalu ajukan.</div></div>` + ban;
+  const kritis = p.j === 'KON' && p.keu - p.fisik > 10;
+  const zona = ed && AIX.ai ? `<div class="aizone" id="aiZone"><b>✨ Unggah sekaligus — AI memilah ke kotak yang tepat</b><span>Tarik semua scan SPJ ini ke sini (Tanda Bukti Kas, surat tugas, SPPD, rincian, …) atau klik untuk memilih. AI mengusulkan kotaknya, Anda yang memutuskan.</span></div>` : '';
+  $('detail').innerHTML = `<div class="head"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill ${ST[p.st][1]}"><span class="dot"></span>${ST[p.st][0]}</span><span class="kode">${p.id} · ${p.mp ? 'paket MONALISA: ' + esc(p.mp) : 'sumber: MONALISA'}</span>${p._baru ? '' : '<button class="lnk" id="bRiw">Riwayat</button>'}</div>
+   <h2>${esc(p.nama)}</h2><div class="hint">${esc(p.pptk)} · ${esc(OPDNAMA)}</div>
+   <div class="facts"><div class="fact"><small>JENIS BELANJA · MEKANISME</small><b>${J.n}</b><div style="font-size:11.5px;font-weight:700;color:var(--blue)">${EA.MEK[p.mek || 'GU']}</div></div><div class="fact"><small>NILAI</small><b>${rp(p.nilai)}</b></div>
+   <div class="fact"><small>BULAN KEGIATAN</small><b>${BLN[p.m - 1]} 2026</b></div><div class="fact"><small>BATAS UNGGAH</small><b style="${late ? 'color:var(--red)' : ''}">${batas}</b></div>
+   <div class="fact"><small>DATA MONALISA</small><b style="${kritis ? 'color:var(--red)' : ''}">${p.fisik != null ? `Fisik ${p.fisik}% · Keu ${p.keu}%` : 'Non-fisik'}</b></div></div></div>
+   ${ban}
+   <div class="body">
+    ${tbkForm(p, ed)}${zona}<div class="sect"><span>DOKUMEN WAJIB · ${J.n.toUpperCase()}</span><span>${nOk(p)} / ${p.docs.length} TERUNGGAH</span></div>
+    <div class="docs">${p.docs.map((d, i) => slot(p, d, i, ed)).join('')}</div>
+    ${cekPanel(p, ed)}
+    <div class="sect" style="margin-top:18px"><span>CEK MANDIRI SEBELUM MENGAJUKAN</span><span>${p.cek.filter(Boolean).length} / ${p.cek.length}</span></div>
+    <div class="checks">${(CEK[p.j] || []).map((c, i) => `<label class="ck${p.cek[i] ? ' on' : ''}"><input type="checkbox" data-ck="${i}" ${p.cek[i] ? 'checked' : ''} ${ed ? '' : 'disabled'}><span>${c}</span></label>`).join('')}</div>
+   </div>`;
+  bindDetail(p);
+}
+function bindDetail(p) {
+  document.querySelectorAll('[data-drop]').forEach(z => {
+    const i = +z.dataset.drop;
+    z.onclick = () => pilih(i, false);
+    z.ondragover = e => { e.preventDefault(); z.classList.add('over') }; z.ondragleave = () => z.classList.remove('over');
+    z.ondrop = async e => { e.preventDefault(); z.classList.remove('over'); const fs = [...e.dataTransfer.files]; for (let n = 0; n < fs.length; n++) await accept(p, i, fs[n], n > 0) };
+  });
+  document.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => pilih(+b.dataset.pick, false));
+  document.querySelectorAll('[data-add]').forEach(b => b.onclick = () => pilih(+b.dataset.add, true));
+  document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => pilih(+b.dataset.cam, !!b.dataset.add2, true));
+  document.querySelectorAll('[data-ai]').forEach(b => b.onclick = () => aiBacaSlot(p, +b.dataset.ai));
+  document.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.del, n = +b.dataset.part || 0, k = fkey(p, i), f = FILES[k], ps = parts(f).map(x => ({ ...x, parts: undefined, ocr: undefined }));
+    const x = ps[n]; if (x && x.url) URL.revokeObjectURL(x.url); ps.splice(n, 1);
+    if (ps.length) FILES[k] = { ...ps[0], parts: ps, ocr: n === 0 ? undefined : f.ocr }; else { delete FILES[k]; p.docs[i].s = 'kosong' }
+    toast('Berkas dihapus'); render();
+  });
+  document.querySelectorAll('[data-view]').forEach(b => b.onclick = () => {
+    const x = parts(FILES[fkey(p, +b.dataset.view)])[+b.dataset.part || 0]; if (!x) return;
+    if (x.src) window.open(encodeURI(x.src) + '#page=' + x.page, '_blank'); else if (x.path) window.open(encodeURI(x.path), '_blank'); else if (x.url) window.open(x.url, '_blank');
+    else toast(x.fake ? 'Berkas contoh tidak memiliki isi pada prototipe' : 'Isi berkas tidak tersedia');
+  });
+  document.querySelectorAll('[data-ck]').forEach(c => c.onchange = () => { p.cek[+c.dataset.ck] = c.checked; render() });
+  document.querySelectorAll('[data-f]').forEach(el => el.onchange = () => {
+    const f = el.dataset.f, v = el.value.trim(); if (f === 'nilai') p.nilai = +v.replace(/\D/g, '') || 0; else p[f] = v;
+    if (f === 'tgl') { const b = BLN.findIndex(x => v.toLowerCase().includes(x.toLowerCase().slice(0, 3))); if (b >= 0) p.m = b + 1 }
+    toast('Isian tersimpan'); render();
+  });
+  const nk = document.querySelector('[data-nk]'); if (nk) nk.onchange = () => { p.nk = nk.value; render() };
+  const a = $('aiPakai'); if (a) a.onclick = () => terapkanSaran(p);
+  const x = $('aiAbaikan'); if (x) x.onclick = () => { p.aiSaran = null; render() };
+  const c = $('aiCek'); if (c) c.onclick = () => jalankanCekAI(p);
+  const sp = $('bSp2d'); if (sp) sp.onclick = async () => { const no = $('noSp2d').value.trim(); if (!no) return toast('Isi nomor SP2D'); try { await API.post('/api/spj/' + p.id + '/sp2d', { no_sp2d: no }); p.st = p._st = 'dibayar'; p.no_sp2d = no; toast('SP2D dicatat'); render() } catch (e) { toast(e.message) } };
+  const rw = $('bRiw'); if (rw) rw.onclick = async () => { try { const L = await API.get('/api/spj/' + p.id + '/riwayat'); $('modal').innerHTML = `<div class="mh"><h3>Riwayat ${esc(p.id)}</h3></div><div class="mb">${L.length ? L.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0F2F5"><b>${esc(r.aksi)}</b><div class="hint">${EA.tgl(r.waktu)} ${r.waktu.slice(11, 16)} · ${esc(r.user)}${r.detail ? ' · ' + esc(r.detail) : ''}</div></div>`).join('') : '<div class="hint">Belum ada riwayat.</div>'}</div><div class="mf"><button class="btn btn-out" onclick="document.getElementById('ovl').classList.remove('on')">Tutup</button></div>`; $('ovl').classList.add('on') } catch (e) { toast(e.message) } };
+  const z = $('aiZone'); if (z) { z.onclick = () => { bulkEl.value = ''; bulkEl.click() }; z.ondragover = e => { e.preventDefault(); z.classList.add('over') }; z.ondragleave = () => z.classList.remove('over'); z.ondrop = e => { e.preventDefault(); z.classList.remove('over'); aiPilah(p, [...e.dataTransfer.files]) } }
+}
+
+// ---------- input SPJ baru + isi otomatis dari scan ----------
+$('bBaru').onclick = () => {
+  const mps = EA.MON;
+  const js = Object.keys(JENIS).filter(k => SES.opd === 'PK' ? /GU$/.test(k) : !/GU$/.test(k));
+  let tbkUp = null;
+  $('modal').innerHTML = `<div class="mh"><h3>Input SPJ baru</h3></div><div class="mb">
+   ${AIX.ai ? `<div class="aizone" id="nAI"><b>✨ Isi otomatis dari scan Tanda Bukti Kas</b><span id="nAIs">Pilih atau tarik scan/foto Tanda Bukti Kas; AI mengisi formulir di bawah. Anda tetap memeriksa isinya.</span></div>` : ''}
+   <div class="tf" style="grid-template-columns:1fr 1fr">
+   <label class="w3">Paket dari MONALISA<select id="nMp">${mps.map(m => `<option value="${m.id}">${esc(m.nama)}</option>`).join('')}</select></label>
+   <label>Jenis belanja<select id="nJ">${js.map(k => `<option value="${k}">${JENIS[k].n}</option>`).join('')}</select></label>
+   <label>Mekanisme pembayaran<select id="nMek">${Object.entries(EA.MEK).map(([k, n]) => `<option value="${k}">${n}</option>`).join('')}</select></label>
+   <label>No. BKU<input id="nB"></label><label>Tanggal<input id="nT" placeholder="contoh: 20 November 2026"></label><label>Kode rekening<input id="nK" placeholder="5.1.02.04.001.00005"></label>
+   <label>Penerima<input id="nP"></label><label>Nilai (Rp)<input id="nN" inputmode="numeric"></label>
+   <label class="w3">Uraian pembayaran<textarea id="nU" rows="2"></textarea></label></div><div class="hint">Setelah disimpan, unggah dokumen wajibnya lalu ajukan.</div></div>
+   <div class="mf"><button class="btn btn-out" id="nX">Batal</button><button class="btn btn-pri" id="nS">Simpan &amp; unggah dokumen</button></div>`;
+  $('ovl').classList.add('on'); $('nX').onclick = () => $('ovl').classList.remove('on');
+  const z = $('nAI');
+  if (z) {
+    const one = Object.assign(document.createElement('input'), { type: 'file', accept: '.pdf,.jpg,.jpeg,.png' });
+    const go = async f => {
+      if (!f) return; $('nAIs').textContent = '✨ AI membaca ' + f.name + '…';
+      try {
+        const f2 = await shrink(f), up = await kirim('baru', f2), r = await baca(up.path, 1);
+        tbkUp = { e: { name: f2.name, size: up.size, type: f2.type || 'application/pdf', path: up.path, at: new Date().toISOString() }, ocr: ocrOf(r) };
+        const s = r.fields || {};
+        if (r.tipe !== 'TBK') $('nAIs').textContent = `⚠ AI mengenali berkas ini sebagai ${r.dok}, bukan Tanda Bukti Kas. Isian tidak diisi otomatis.`;
+        else {
+          if (s.bku != null) $('nB').value = s.bku; if (s.tgl) $('nT').value = s.tgl; if (s.kode) $('nK').value = s.kode; if (s.penerima) $('nP').value = s.penerima;
+          if (s.nilai) $('nN').value = s.nilai.toLocaleString('id-ID'); if (s.uraian) $('nU').value = s.uraian;
+          if (SES.opd === 'PK') $('nJ').value = /^5\.1\.02\.04/.test(s.kode || '') || /perjalanan|menghadiri|rapat/i.test(s.uraian || '') ? 'PDGU' : 'BLGU';
+          $('nAIs').textContent = `✓ AI mengisi ${Object.values(s).filter(v => v != null && v !== '').length} isian dari ${f.name}. Periksa kembali sebelum menyimpan.`;
+        }
+      } catch (e) { $('nAIs').textContent = 'AI gagal membaca: ' + e.message }
+    };
+    one.onchange = () => go(one.files[0]); z.onclick = () => { one.value = ''; one.click() };
+    z.ondragover = e => { e.preventDefault(); z.classList.add('over') }; z.ondragleave = () => z.classList.remove('over');
+    z.ondrop = e => { e.preventDefault(); z.classList.remove('over'); go(e.dataTransfer.files[0]) };
+  }
+  $('nS').onclick = () => {
+    const u = $('nU').value.trim(), n = +$('nN').value.replace(/\D/g, ''); if (!u || !n) { toast('Isi uraian dan nilai terlebih dahulu'); return }
+    const j = $('nJ').value, t = $('nT').value.trim(), b = BLN.findIndex(x => t.toLowerCase().includes(x.toLowerCase().slice(0, 3)));
+    const id = SES.opd + '-SPJ-' + String(P.filter(p => p.input).length + 1).padStart(3, '0');
+    const p = { id, nama: u, opd: SES.opd, j, m: b >= 0 ? b + 1 : NOW_M, nilai: n, st: 'draf', pptk: 'Input bendahara', fisik: null, keu: null, mp_id: +$('nMp').value, mp: (EA.MON.find(x => x.id == $('nMp').value) || {}).nama, _baru: true, bku: $('nB').value.trim(), tgl: t, kode: $('nK').value.trim(), penerima: $('nP').value.trim(), input: true, mek: $('nMek').value,
+      docs: JENIS[j].docs.map(d => ({ n: d, s: 'kosong' })), cek: (CEK[j] || []).map(() => false), nk: '' };
+    if (tbkUp) { const i = p.docs.findIndex(d => /Bukti Kas|^Kuitansi$|Faktur/.test(d.n)); if (i >= 0) { FILES[fkey(p, i)] = { ...tbkUp.e, parts: [tbkUp.e], ocr: tbkUp.ocr }; p.docs[i].s = 'ok' } }
+    P.push(p); S.sel = id; $('ovl').classList.remove('on'); toast('SPJ baru tersimpan sebagai draf'); render();
+  };
+};
+
+// ---------- render: catat hasil cek AI saat SPJ diajukan + status AI ----------
+const _renderUtama = render;
+render = function () {
+  P.forEach(p => { if (ST[p.st][2] >= 1 && p.tglAju && !p.aicek) p.aicek = cekAI(p) });
+  _renderUtama(); sinkron();
+  const c = document.querySelector('.crumb');
+  if (c) c.innerHTML = 'Portal Bendahara · ' + esc(OPDNAMA) + (AIX.ai ? '<span class="aist p-green">✨ Asisten AI aktif</span>' : AIX.upload ? '<span class="aist p-amber">AI tidak aktif</span>' : '<span class="aist p-grey">Mode tanpa server: scan tidak tersimpan</span>');
+};
+(async () => {
+  try { const r = await fetch('/api/status', { cache: 'no-store' }); if (r.ok) { const j = await r.json(); AIX.upload = !!j.upload; AIX.ai = !!j.ai } } catch (e) { }
+  render();
+})();
+
+if ($('gantiSandi')) $('gantiSandi').onclick = () => {
+  $('modal').innerHTML = `<div class="mh"><h3>Ganti kata sandi</h3></div><div class="mb"><div class="tf" style="grid-template-columns:1fr"><label>Kata sandi lama<input type="password" id="pwL"></label><label>Kata sandi baru (min. 8 karakter)<input type="password" id="pwB"></label></div></div><div class="mf"><button class="btn btn-out" id="pwX">Batal</button><button class="btn btn-pri" id="pwS">Simpan</button></div>`;
+  $('ovl').classList.add('on'); $('pwX').onclick = () => $('ovl').classList.remove('on');
+  $('pwS').onclick = async () => { try { await API.post('/api/password', { lama: $('pwL').value, baru: $('pwB').value }); $('ovl').classList.remove('on'); toast('Kata sandi diganti') } catch (e) { toast(e.message) } };
+};
+window.addEventListener('beforeunload', e => { if (P.some(p => SNAP[p.id] !== kunci(p) && (p._st === 'draf' || p._st === 'kembali'))) { sinkron(); } });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Kartu Akun e-Audit</title>
+<style>
+@page{size:A4 portrait;margin:1.2cm}
+*{box-sizing:border-box}
+body{margin:0;background:#E9ECF0;font-family:Arial,Helvetica,sans-serif;color:#111}
+.alat{position:sticky;top:0;z-index:2;background:#1F2B3A;color:#fff;padding:10px 16px;display:flex;gap:10px;align-items:center;font-family:"Segoe UI",sans-serif;font-size:13px;flex-wrap:wrap}
+.alat button{border:0;border-radius:7px;padding:7px 14px;font-weight:600;cursor:pointer}.alat .c{background:#2F8F4E;color:#fff}
+.alat .w{color:#FFD58A}
+.hal{width:21cm;margin:18px auto;background:#fff;padding:1.2cm;box-shadow:0 2px 12px rgba(0,0,0,.15);display:grid;grid-template-columns:1fr 1fr;gap:.35cm}
+.k{border:1.5px dashed #8A96A6;border-radius:10px;padding:10px 12px;break-inside:avoid;page-break-inside:avoid;height:8.75cm;display:flex;flex-direction:column}
+.kp{display:flex;gap:8px;align-items:center;border-bottom:2px solid #14284A;padding-bottom:6px}
+.kp img{width:34px;height:auto}.kp div{font-size:8.5pt;line-height:1.25;font-weight:bold;color:#14284A}
+.jd{margin:7px 0 6px;font-size:10.5pt;font-weight:bold;letter-spacing:.3px;text-align:center;background:#EEF3F9;border-radius:6px;padding:4px}
+table{width:100%;border-collapse:collapse;font-size:8.7pt}td{padding:2px 0;vertical-align:top}td:first-child{width:36%;color:#4A5565}
+.cr{margin-top:6px;border:1.5px solid #14284A;border-radius:8px;padding:5px 8px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center}
+.cr span{font-size:8.5pt;color:#4A5565}.cr b{font-family:Consolas,"Courier New",monospace;font-size:13.5pt;letter-spacing:.5px}
+.ct{margin-top:auto;padding-top:4px;font-size:7.4pt;line-height:1.35;color:#333}
+.ct ol{margin:3px 0 0;padding-left:14px}
+.kosong{grid-column:1/-1;text-align:center;padding:40px;font-family:"Segoe UI",sans-serif;color:#555}
+@media print{body{background:#fff}.alat{display:none}.hal{width:auto;margin:0;padding:0;box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="alat"><button onclick="location.href='/eaudit.html'">← Kembali</button><button class="c" onclick="print()">🖨 Cetak / simpan PDF</button><span class="w">Kata sandi hanya tampil di halaman ini. Cetak sekarang; halaman akan kosong jika tab ditutup.</span></div>
+<div class="hal" id="doc"></div>
+<script>
+(() => {
+  let K = window.KARTU; try { K = K || JSON.parse(sessionStorage.getItem('kartuAkun') || 'null') } catch (e) { }
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const PERAN = { bendahara: 'Bendahara Pengeluaran', ppk: 'PPK-SKPD', pakpa: 'PA / KPA', admin: 'Administrator', inspektur: 'Inspektur', irban: 'Inspektur Pembantu', ketua: 'Ketua Tim', auditor: 'Auditor' };
+  const BLN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const d = new Date(), tg = d.getDate() + ' ' + BLN[d.getMonth()] + ' ' + d.getFullYear();
+  const alamat = window.ALAMAT || (location.protocol.startsWith('http') ? location.origin : 'http://localhost:8080');
+  const doc = document.getElementById('doc');
+  if (!K || !K.length) { doc.innerHTML = '<div class="kosong">Tidak ada kartu untuk dicetak.<br>Buat dari menu <b>Pengguna &amp; Akses → Kartu akun bendahara</b>.</div>'; return }
+  doc.innerHTML = K.map(k => `<div class="k">
+    <div class="kp"><img src="${window.LOGO || 'assets/logo-konsel.png'}" alt=""><div>PEMERINTAH KABUPATEN KONAWE SELATAN<br>INSPEKTORAT DAERAH</div></div>
+    <div class="jd">KARTU AKUN APLIKASI e-AUDIT</div>
+    <table><tr><td>Nama</td><td><b>${esc(k.nama || '-')}</b></td></tr>
+      ${k.nip ? `<tr><td>NIP</td><td>${esc(k.nip)}</td></tr>` : ''}
+      <tr><td>Peran</td><td>${esc(PERAN[k.peran] || k.peran)}</td></tr>
+      <tr><td>Perangkat daerah</td><td>${esc(k.opd_nama || 'Inspektorat Daerah')}</td></tr>
+      <tr><td>Alamat aplikasi</td><td>${esc(alamat)}</td></tr></table>
+    <div class="cr"><span>Nama pengguna</span><b>${esc(k.username)}</b><span>Kata sandi awal</span><b>${esc(k.password)}</b></div>
+    <div class="ct"><b>Petunjuk</b> <span style="float:right;color:#666">Diterbitkan ${tg}</span><ol><li>Masuk dengan nama pengguna dan kata sandi awal di atas.</li><li>Aplikasi langsung meminta Anda membuat kata sandi baru (min. 8 karakter).</li><li>Akun bersifat pribadi; jangan berikan kepada orang lain. Lupa sandi: hubungi Admin Inspektorat.</li></ol></div></div>`).join('');
+  document.title = 'Kartu Akun e-Audit (' + K.length + ')';
+})();
+</script>
+</body>
+</html>

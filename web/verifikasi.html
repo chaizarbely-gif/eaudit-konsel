@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verifikasi SPJ · e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+<style>
+.dl{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px;margin:12px 0}.dl dt{color:var(--muted)}.dl dd{margin:0;font-weight:600}
+.dk{display:flex;gap:10px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:7px;background:#fff}
+.dk .pdf{width:34px;height:34px;border-radius:7px;background:#FBE9E7;color:var(--red);font-weight:800;font-size:10px;display:grid;place-items:center;flex:none}
+.dk .nm{flex:1;min-width:0}.dk .nm b{display:block;font-size:13px}.dk .nm small{color:var(--muted);font-size:11.5px}
+.aic{border:1px solid #CFE0F3;background:#F4F8FD;border-radius:9px;padding:9px 12px;font-size:12.5px;line-height:1.7}
+.act{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding:12px 18px;border-top:1px solid var(--line)}
+textarea,select{font:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg></div>
+      <div><b>e-Audit · Verifikasi</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav>
+    <div class="foot"><b id="nm">-</b><br><span id="op"></span></div>
+  </aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1 id="judul">Verifikasi SPJ</h1><p id="sub"></p></div></div>
+    <div class="layout">
+      <section class="card panel">
+        <h3>Daftar SPJ</h3><div class="hint" id="hint"></div>
+        <input class="search" id="q" placeholder="Cari SPJ, kode, atau penerima…">
+        <div class="chips" id="chips"></div>
+        <div class="plist" id="plist"></div>
+      </section>
+      <section class="card" id="detail"></section>
+    </div>
+  </main>
+</div>
+<div class="ovl" id="ovl"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+<script src="assets/common.js"></script>
+<script src="assets/opd-nav.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), { esc, rp, ST, JENIS, BLN } = EA;
+  const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 2800) };
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['ppk', 'pakpa'].includes(ME.peran)) { location.href = '/'; return }
+  EA.init(await API.get('/api/ref'));
+  const PPK = ME.peran === 'ppk', TAHAP = PPK ? 'diajukan' : 'ppk';
+  $('nm').textContent = ME.nama; $('op').textContent = ME.opd_nama; 
+  $('judul').textContent = PPK ? 'Verifikasi SPJ' : 'Pengesahan SPJ'; 
+  $('crumb').textContent = (PPK ? 'Pejabat Pembuat Komitmen' : 'Pengguna Anggaran / KPA') + ' · ' + ME.opd_nama;
+  $('sub').textContent = PPK ? 'Periksa kelengkapan dan kebenaran SPJ yang diajukan bendahara, lalu setujui atau kembalikan.' : 'Sahkan SPJ yang telah diverifikasi PPK sebelum SP2D diterbitkan.';
+  let P = await API.get('/api/spj'), sel = null, chip = 'tunggu', q = '';
+  const CH = [['tunggu', 'Menunggu tindakan saya'], ['proses', 'Dalam proses'], ['semua', 'Semua']];
+  $('chips').innerHTML = CH.map(([k, n]) => `<button class="chip${k === chip ? ' on' : ''}" data-k="${k}">${n}</button>`).join('');
+  document.querySelectorAll('#chips .chip').forEach(c => c.onclick = () => { chip = c.dataset.k; document.querySelectorAll('#chips .chip').forEach(x => x.classList.toggle('on', x === c)); daftar() });
+  $('q').oninput = e => { q = e.target.value.toLowerCase(); daftar() };
+  function saring() {
+    let L = P.slice();
+    if (chip === 'tunggu') L = L.filter(p => p.st === TAHAP);
+    if (chip === 'proses') L = L.filter(p => ST[p.st][2] >= 1 && p.st !== 'dibayar');
+    if (q) L = L.filter(p => (p.nama + p.id + p.penerima + p.bku).toLowerCase().includes(q));
+    return L.sort((a, b) => (a.tglAju || '').localeCompare(b.tglAju || ''));
+  }
+  function daftar() {
+    const L = saring(), n = P.filter(p => p.st === TAHAP).length;
+    $('hint').textContent = `${n} SPJ menunggu ${PPK ? 'verifikasi' : 'pengesahan'} Anda`;
+    $('plist').innerHTML = L.length ? L.map(p => `<div class="pi${p.id === sel ? ' on' : ''}" data-id="${p.id}"><b>${esc(p.nama)}</b><div class="meta">${p.id} · ${JENIS[p.j].n} · ${rp(p.nilai)}</div>
+      <div class="row"><span class="pill ${ST[p.st][1]}"><span class="dot"></span>${ST[p.st][0]}</span><small>${p.tglAju ? 'diajukan ' + EA.tgl(p.tglAju) : ''}</small></div></div>`).join('')
+      : '<div class="hint" style="padding:18px;text-align:center">Tidak ada SPJ.</div>';
+    document.querySelectorAll('.pi').forEach(e => e.onclick = () => { sel = e.dataset.id; daftar(); detail() });
+  }
+  function berkas(p, i) {
+    const f = (p.files || {})[i]; if (!f) return '<small style="color:var(--red)">tidak ada berkas</small>';
+    return (f.parts || [f]).map(x => x.src ? `<a href="${encodeURI(x.src)}#page=${x.page}" target="_blank">${esc(x.name)} ↗</a>` : x.path ? `<a href="${encodeURI(x.path)}" target="_blank">${esc(x.name)} ↗</a>` : `<small>${esc(x.name)} (contoh)</small>`).join(' · ');
+  }
+  function detail() {
+    const p = P.find(x => x.id === sel);
+    if (!p) { $('detail').innerHTML = '<div class="panel hint" style="padding:40px;text-align:center">Pilih SPJ di daftar untuk memeriksa.</div>'; return }
+    const giliran = p.st === TAHAP;
+    $('detail').innerHTML = `<div class="head"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill ${ST[p.st][1]}"><span class="dot"></span>${ST[p.st][0]}</span><span class="kode">${p.id}${p.mp ? ' · paket MONALISA: ' + esc(p.mp) : ''}</span><button class="lnk" id="bRiw">Riwayat</button></div>
+      <h2>${esc(p.nama)}</h2>
+      <dl class="dl"><dt>Jenis belanja</dt><dd>${JENIS[p.j].n}</dd><dt>Mekanisme</dt><dd>${EA.MEK[p.mek || 'GU']}</dd><dt>Nilai</dt><dd>${rp(p.nilai)}</dd><dt>No. BKU · tanggal</dt><dd>${esc(p.bku || '–')} · ${esc(p.tgl || '–')}</dd>
+      <dt>Kode rekening</dt><dd>${esc(p.kode || '–')}</dd><dt>Penerima</dt><dd>${esc(p.penerima || '–')}</dd><dt>Diajukan</dt><dd>${p.tglAju ? EA.tgl(p.tglAju) : '–'}</dd></dl></div>
+      ${p.st === 'kembali' ? `<div class="banner b-red">↺ <div><b>Dikembalikan.</b> ${esc(p.catatan || '')}</div></div>` : ''}
+      <div class="body">
+        ${p.aicek ? `<div class="sect"><span>✨ HASIL CEK AI SAAT DIAJUKAN</span></div><div class="aic">${p.aicek.map(([s, t]) => (s === 'ok' ? '✓ ' : s === 'warn' ? '⚠ ' : '– ') + esc(t)).join('<br>')}</div>` : ''}
+        <div class="sect" style="margin-top:14px"><span>DOKUMEN SPJ · ${p.docs.filter(d => d.s === 'ok').length}/${p.docs.length}</span></div>
+        ${p.docs.map((d, i) => `<div class="dk"><div class="pdf">PDF</div><div class="nm"><b>${i + 1}. ${esc(d.n)}</b>${berkas(p, i)}</div>${d.s === 'ditolak' ? '<span class="pill p-red">ditolak</span>' : d.s === 'ok' ? '<span class="pill p-green">✓</span>' : '<span class="pill p-grey">kosong</span>'}</div>`).join('')}
+      </div>
+      ${giliran ? `<div class="act"><button class="btn btn-red" id="bKem">Kembalikan ke bendahara</button><button class="btn btn-pri" id="bOk">${PPK ? 'Setujui & teruskan ke PA/KPA' : 'Sahkan SPJ'}</button></div>`
+        : `<div class="act"><span class="hint">${ST[p.st][2] < (PPK ? 1 : 2) ? 'Belum sampai pada tahap Anda.' : 'Sudah melewati tahap Anda.'}</span></div>`}`;
+    $('bRiw').onclick = async () => { const L = await API.get('/api/spj/' + p.id + '/riwayat'); modal(`Riwayat ${p.id}`, L.map(r => `<div style="padding:7px 0;border-bottom:1px solid #F0F2F5"><b>${esc(r.aksi)}</b><div class="hint">${EA.tgl(r.waktu)} ${r.waktu.slice(11, 16)} · ${esc(r.user)}${r.detail ? ' · ' + esc(r.detail) : ''}</div></div>`).join('') || '<div class="hint">Belum ada riwayat.</div>', '') };
+    if (!giliran) return;
+    $('bOk').onclick = () => modal(PPK ? 'Setujui SPJ?' : 'Sahkan SPJ?', `<p style="margin:0 0 8px">${esc(p.id)} · ${rp(p.nilai)}</p><div class="tf" style="grid-template-columns:1fr"><label>Catatan (opsional)<textarea id="mc" rows="2"></textarea></label></div>`,
+      `<button class="btn btn-pri" id="mY">${PPK ? 'Setujui' : 'Sahkan'}</button>`, async () => { await aksi(p, { aksi: 'setuju', catatan: $('mc').value }) });
+    $('bKem').onclick = () => modal('Kembalikan ke bendahara', `<div class="tf" style="grid-template-columns:1fr"><label>Dokumen yang perlu diperbaiki<select id="ms"><option value="">— tidak spesifik —</option>${p.docs.map((d, i) => `<option value="${i}">${i + 1}. ${esc(d.n)}</option>`).join('')}</select></label>
+      <label>Alasan pengembalian (wajib)<textarea id="mc" rows="3" placeholder="contoh: tanda tangan penerima pada kuitansi belum ada"></textarea></label></div>`,
+      `<button class="btn btn-red" id="mY">Kembalikan</button>`, async () => { await aksi(p, { aksi: 'kembalikan', catatan: $('mc').value, slot: $('ms').value === '' ? null : +$('ms').value }) });
+  }
+  async function aksi(p, b) {
+    try { await API.post(`/api/spj/${p.id}/verifikasi`, b); P = await API.get('/api/spj'); tutup(); toast(b.aksi === 'setuju' ? (PPK ? 'Disetujui, diteruskan ke PA/KPA' : 'SPJ disahkan, bendahara dapat memproses SP2D') : 'SPJ dikembalikan ke bendahara'); daftar(); detail() }
+    catch (e) { toast(e.message) }
+  }
+  function modal(judul, isi, tombol, ok) {
+    $('modal').innerHTML = `<div class="mh"><h3>${judul}</h3></div><div class="mb">${isi}</div><div class="mf"><button class="btn btn-out" id="mX">${tombol ? 'Batal' : 'Tutup'}</button>${tombol}</div>`;
+    $('ovl').classList.add('on'); $('mX').onclick = tutup; if (ok) $('mY').onclick = ok;
+  }
+  const tutup = () => $('ovl').classList.remove('on');
+  $('ovl').onclick = e => { if (e.target === $('ovl')) tutup() };
+  sel = (saring()[0] || {}).id || null; daftar(); detail();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pertanggungjawaban GU/TU/LS · e-Audit Konawe Selatan</title>
+<link rel="stylesheet" href="assets/opd.css">
+<style>
+.tb{width:100%;border-collapse:collapse;font-size:12.5px}.tb th{text-align:left;font-size:11px;color:var(--muted);padding:7px 8px;border-bottom:1px solid var(--line);background:#FAFBFC}
+.tb td{padding:7px 8px;border-bottom:1px solid #F0F3F6;vertical-align:top}.tb .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.fm2{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}.fm2 label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;color:var(--muted)}
+.fm2 input,.fm2 select{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;font-size:13px}
+.tot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.tot div{background:#F7F9FB;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.tot small{display:block;font-size:10.5px;font-weight:700;color:var(--muted)}.tot b{font-size:14px}.tot .ok{background:var(--pri-soft);border-color:#BFE0C8}.tot .no{background:#FBE9E7;border-color:#F2C9C3}
+.tabj{display:flex;gap:6px;margin:10px 0}.tabj button{flex:1;border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px;font-weight:700;font-size:12px;cursor:pointer;color:var(--muted)}.tabj button.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+@media (max-width:900px){.fm2,.tot{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side"><div class="brand"><div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></svg></div><div><b>e-Audit · OPD</b><small>Kabupaten Konawe Selatan</small></div></div>
+    <nav class="nav" id="navOPD"></nav><div class="foot"><b id="nm">-</b><br><span id="pr"></span></div></aside>
+  <main class="main">
+    <div class="top"><div><div class="crumb" id="crumb"></div><h1>Pertanggungjawaban UP/GU · TU · LS</h1><p>Kelompokkan SPJ yang telah diajukan menurut mekanisme pembayarannya. Rekap dicetak otomatis dari data, tanpa memindai BKU.</p></div></div>
+    <div class="layout">
+      <section class="card panel"><h3>Dokumen pertanggungjawaban</h3><div class="hint" id="hint"></div>
+        <div class="tabj" id="tabj"></div><button class="btn btn-pri" id="baru" style="width:100%;margin-bottom:10px;display:none">+ Susun baru</button><div class="plist" id="plist"></div></section>
+      <section class="card" id="detail"></section>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+<script src="assets/common.js"></script><script src="assets/opd-nav.js"></script>
+<script>
+(async () => {
+  const $ = id => document.getElementById(id), { esc, rp, ST, JENIS, MEK } = EA;
+  const toast = t => { const e = $('toast'); e.textContent = t; e.classList.add('on'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('on'), 3200) };
+  const ME = await API.me(); if (!ME) { location.href = '/login.html'; return } if (!['bendahara', 'pakpa'].includes(ME.peran)) { location.href = '/'; return }
+  $('nm').textContent = ME.nama; $('pr').textContent = EA.PERAN[ME.peran]; $('crumb').textContent = ME.opd_nama;
+  const BD = ME.peran === 'bendahara'; if (BD) $('baru').style.display = '';
+  const INFO = { GU: 'SPJ atas pemakaian Uang Persediaan, diajukan per Ganti Uang.', TU: 'Tambahan Uang wajib dipertanggungjawabkan paling lambat 1 bulan sejak SP2D TU; sisa disetor ke Kas Daerah. Nilai TU = SPJ + setoran sisa.',
+    LS: 'Pembayaran langsung kepada pihak ketiga per SP2D-LS (barang/jasa, konstruksi, honorarium/gaji).' };
+  const ROM = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+  let J = ['GU', 'TU', 'LS'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'GU', G = [], K = [], sel = null, edit = null;
+  async function muat() { G = await API.get('/api/gu'); if (BD) K = await API.get('/api/gu/kandidat') }
+  const neraca = g => { const tot = g.spj ? g.spj.reduce((a, p) => a + p.nilai, 0) : 0, nil = +g.nilai_sp2d || 0, st = +g.setor || 0; return { tot, nil, st, sel: (g.jenis || 'GU') === 'TU' ? nil - tot - st : (g.jenis === 'LS' && nil ? nil - tot : 0) } };
+  const batasTU = g => { if (!g.tgl_sp2d) return null; const d = new Date(g.tgl_sp2d); d.setMonth(d.getMonth() + 1); return d };
+  function daftar() {
+    $('tabj').innerHTML = Object.entries(MEK).map(([k, n]) => `<button class="${J === k ? 'on' : ''}" data-j="${k}">${n} (${G.filter(g => (g.jenis || 'GU') === k).length})</button>`).join('');
+    document.querySelectorAll('[data-j]').forEach(b => b.onclick = () => { J = b.dataset.j; edit = null; sel = (G.find(g => (g.jenis || 'GU') === J) || {}).id || null; daftar(); detail() });
+    const L = G.filter(g => (g.jenis || 'GU') === J);
+    $('hint').textContent = INFO[J] + (BD ? ` · ${K.filter(p => p.mek === J).length} SPJ ${MEK[J]} belum dikelompokkan` : '');
+    $('baru').textContent = '+ Susun ' + MEK[J] + ' baru';
+    $('plist').innerHTML = L.map(g => { const n = neraca(g), b = J === 'TU' ? batasTU(g) : null, lewat = b && g.status !== 'final' && b < new Date();
+      return `<div class="pi${g.id === sel && !edit ? ' on' : ''}" data-id="${g.id}"><b>${esc(g.nama)}</b><div class="meta">${EA.tgl(g.tgl)} · ${g.spj.length} SPJ · ${rp(g.total)}${g.no_sp2d ? ' · SP2D ' + esc(g.no_sp2d) : ''}</div>
+      <div class="row"><span class="pill ${g.status === 'final' ? 'p-green' : 'p-grey'}"><span class="dot"></span>${g.status === 'final' ? 'Final' : 'Draf'}</span>${n.sel ? `<span class="pill p-red">selisih ${rp(Math.abs(n.sel))}</span>` : ''}${lewat ? '<span class="pill p-red">lewat batas</span>' : ''}</div></div>` }).join('')
+      || `<div class="hint" style="padding:18px;text-align:center">Belum ada pertanggungjawaban ${MEK[J]}.</div>`;
+    document.querySelectorAll('.pi').forEach(e => e.onclick = () => { sel = +e.dataset.id; edit = null; daftar(); detail() });
+  }
+  function tabel(L, pilih, terpilih) {
+    return `<table class="tb"><tr>${pilih ? '<th></th>' : ''}<th>No. BKU</th><th>Tanggal</th><th>Uraian</th><th>Penerima</th><th class="n">Nilai</th><th>Status SPJ</th></tr>
+      ${L.map(p => `<tr>${pilih ? `<td><input type="checkbox" data-s="${p.id}" ${terpilih.has(p.id) ? 'checked' : ''}></td>` : ''}<td>${esc(p.bku || '–')}</td><td>${esc(p.tgl || '–')}</td><td><b>${esc(p.nama.slice(0, 90))}</b><div class="kode">${p.id} · ${JENIS[p.j] ? JENIS[p.j].n : ''}</div></td><td>${esc(p.penerima || '–')}</td><td class="n">${rp(p.nilai)}</td><td><span class="pill ${ST[p.st][1]}">${ST[p.st][0]}</span></td></tr>`).join('')
+      || `<tr><td colspan="7" class="hint" style="padding:16px;text-align:center">${pilih ? `Belum ada SPJ bermekanisme ${MEK[J]} yang diajukan dan belum dikelompokkan. Pilih mekanisme ${MEK[J]} saat input SPJ, lalu ajukan.` : 'Kosong.'}</td></tr>`}</table>`;
+  }
+  function kotakNeraca(g) {
+    const n = neraca(g), jn = g.jenis || 'GU';
+    if (jn === 'GU') return `<div class="tot"><div><small>JUMLAH SPJ</small><b>${g.spj.length}</b></div><div class="ok"><small>NILAI DIPERTANGGUNGJAWABKAN</small><b>${rp(n.tot)}</b></div></div>`;
+    if (jn === 'TU') { const b = batasTU(g); return `<div class="tot"><div><small>NILAI TU (SP2D)</small><b>${rp(n.nil)}</b></div><div><small>SPJ TU</small><b>${rp(n.tot)}</b></div><div><small>SISA DISETOR</small><b>${rp(n.st)}</b></div>
+      <div class="${n.sel ? 'no' : 'ok'}"><small>SELISIH</small><b>${n.sel ? rp(n.sel) : 'Seimbang ✓'}</b></div></div>${b ? `<div class="hint" style="margin-top:6px">Batas pertanggungjawaban: <b style="color:${b < new Date() && g.status !== 'final' ? 'var(--red)' : 'inherit'}">${EA.tgl(b.toISOString())}</b> (1 bulan sejak SP2D TU)</div>` : ''}` }
+    return `<div class="tot"><div><small>NILAI SP2D-LS</small><b>${n.nil ? rp(n.nil) : '–'}</b></div><div><small>NILAI SPJ</small><b>${rp(n.tot)}</b></div><div class="${n.sel ? 'no' : 'ok'}"><small>SELISIH</small><b>${n.nil ? (n.sel ? rp(n.sel) : 'Sesuai ✓') : '–'}</b></div></div>`;
+  }
+  function detail() {
+    if (edit) {
+      const g = edit, jn = g.jenis || J, terpilih = new Set(g.spj_ids || []), L = [...(g.spj || []), ...K.filter(p => p.mek === jn && !(g.spj || []).some(x => x.id === p.id))];
+      const n = G.filter(x => (x.jenis || 'GU') === jn).length + 1, nmAwal = jn === 'GU' ? 'GU ' + (ROM[n - 1] || n) : jn === 'TU' ? 'TU ' + n : 'LS ' + EA.BLN[new Date().getMonth()];
+      $('detail').innerHTML = `<div class="head"><h2>${g.id ? 'Ubah ' + esc(g.nama) : 'Susun pertanggungjawaban ' + MEK[jn]}</h2><div class="hint">${INFO[jn]}</div></div><div class="body">
+        <div class="fm2"><label>Nama<input id="gn" value="${esc(g.nama || nmAwal)}"></label><label>Tanggal pertanggungjawaban<input id="gt" type="date" value="${(g.tgl || new Date().toISOString()).slice(0, 10)}"></label>
+        ${jn !== 'GU' ? `<label>Nomor SP2D ${jn}<input id="g1" value="${esc(g.no_sp2d || '')}"></label><label>Tanggal SP2D<input id="g2" type="date" value="${esc(g.tgl_sp2d || '')}"></label><label>${jn === 'TU' ? 'Nilai TU diterima' : 'Nilai SP2D-LS'} (Rp)<input id="g3" type="number" min="0" value="${g.nilai_sp2d || ''}"></label>` : ''}
+        ${jn === 'TU' ? `<label>Sisa TU disetor ke Kas Daerah (Rp)<input id="g4" type="number" min="0" value="${g.setor || 0}"></label>` : ''}</div>
+        ${tabel(L, true, terpilih)}<div id="nr"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px"><button class="btn btn-out" id="gx">Batal</button><button class="btn btn-pri" id="gs">Simpan draf</button></div></div>`;
+      const kumpul = () => ({ jenis: jn, nama: $('gn').value, tgl: $('gt').value, spj_ids: [...document.querySelectorAll('[data-s]:checked')].map(x => x.dataset.s),
+        no_sp2d: $('g1') ? $('g1').value : '', tgl_sp2d: $('g2') ? $('g2').value : '', nilai_sp2d: $('g3') ? +$('g3').value : 0, setor: $('g4') ? +$('g4').value : 0 });
+      const hitung = () => { const b = kumpul(); $('nr').innerHTML = kotakNeraca({ ...b, spj: L.filter(p => b.spj_ids.includes(p.id)) }) };
+      document.querySelectorAll('[data-s],#g3,#g4,#g2').forEach(x => x.oninput = x.onchange = hitung); hitung();
+      $('gx').onclick = () => { edit = null; daftar(); detail() };
+      $('gs').onclick = async () => { const b = kumpul(); try { const r = g.id ? await API.put('/api/gu/' + g.id, b) : await API.post('/api/gu', b); sel = g.id || r.id; edit = null; await muat(); toast('Disimpan sebagai draf'); daftar(); detail() } catch (e) { toast(e.message) } };
+      return;
+    }
+    const g = G.find(x => x.id === sel && (x.jenis || 'GU') === J);
+    if (!g) { $('detail').innerHTML = `<div class="panel hint" style="padding:40px;text-align:center">${BD ? `Klik <b>+ Susun ${MEK[J]} baru</b> untuk mengelompokkan SPJ ${MEK[J]} yang telah diajukan.` : 'Belum ada dokumen dari bendahara.'}</div>`; return }
+    const ed = BD && g.status === 'draf';
+    $('detail').innerHTML = `<div class="head"><span class="pill ${g.status === 'final' ? 'p-green' : 'p-grey'}"><span class="dot"></span>${g.status === 'final' ? 'Final · terkunci' : 'Draf'}</span> <span class="pill p-blue">${MEK[g.jenis || 'GU']}</span><h2>${esc(g.nama)}</h2>
+      <div class="hint">${EA.tgl(g.tgl)}${g.no_sp2d ? ' · SP2D ' + esc(g.no_sp2d) + (g.tgl_sp2d ? ' tanggal ' + EA.tgl(g.tgl_sp2d) : '') : ''} · disusun ${esc(g.dibuat_oleh || '')}</div></div>
+      <div class="body">${tabel(g.spj, false)}${kotakNeraca(g)}
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap"><a class="btn btn-out" href="/gu-cetak.html?id=${g.id}" target="_blank" style="text-decoration:none">🖨 Cetak rekap</a>
+      ${ed ? '<button class="btn btn-red" id="gh">Hapus</button><button class="btn btn-out" id="ge">Ubah</button><button class="btn btn-pri" id="gf">Finalkan</button>' : ''}</div></div>`;
+    if (!ed) return;
+    $('ge').onclick = () => { edit = JSON.parse(JSON.stringify(g)); daftar(); detail() };
+    $('gh').onclick = async () => { if (!confirm('Hapus draf ' + g.nama + '?')) return; try { await API.del('/api/gu/' + g.id); await muat(); sel = null; toast('Draf dihapus'); daftar(); detail() } catch (e) { toast(e.message) } };
+    $('gf').onclick = async () => { if (!confirm('Finalkan ' + g.nama + '? Setelah final, susunan tidak dapat diubah.')) return; try { await API.post(`/api/gu/${g.id}/final`); await muat(); toast(g.nama + ' final'); daftar(); detail() } catch (e) { toast(e.message) } };
+  }
+  $('baru').onclick = () => { edit = { jenis: J }; daftar(); detail() };
+  await muat(); sel = (G.find(g => (g.jenis || 'GU') === J) || {}).id || null; daftar(); detail();
+})();
+</script>
+</body>
+</html>
