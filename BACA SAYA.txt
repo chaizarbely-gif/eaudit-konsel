@@ -65,3 +65,15 @@ JDIH PENGAWASAN
   - PDF isi awal ada di dokumen\JDIH\ (salinan dari drive D:); PDF unggahan
     baru disimpan di data\unggahan\JDIH\ (ikut dicadangkan otomatis).
   - Status "Belum dicek" = keberlakuan belum diverifikasi ke sumber resmi.
+
+AUDIT AWAL OTOMATIS (menu PENGAWASAN > Audit Awal Otomatis, khusus Inspektorat)
+  - Tombol "Jalankan audit awal" memeriksa SPJ yang telah DIAJUKAN (sesuai obrik
+    yang ditugaskan) dengan aturan penatausahaan (P1-P9) dan ketaatan tarif SHS 2026
+    (K1, Perbup 57/2025). Hasilnya DRAF temuan; auditor wajib memeriksa bukti asli,
+    lalu "Terima" (menjadi temuan resmi, masuk alur LHP) atau "Tolak" (dengan alasan).
+  - "Temuan" = bukti cukup (tarif sudah dicocokkan dengan naskah SHS); "Perlu dicek" =
+    indikasi atau data hasil OCR yang belum pasti.
+  - Uji tarif memakai rincian biaya, DPA, dan jabatan pelaksana (Surat Tugas) hasil
+    OCR. Untuk SPJ yang baru diunggah, uji tarif baru berjalan setelah rinciannya
+    di-OCR (saat ini tersedia untuk GU I Bag. Perencanaan & Keuangan).
+  - Tarif SHS ada di tarif_shs2026.py (sumber halaman tercantum); perbarui tiap tahun.

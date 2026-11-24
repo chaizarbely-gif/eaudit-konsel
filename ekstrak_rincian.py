@@ -54,7 +54,8 @@ def urai(full):
         h = re.search(r"\(?\s*(\d{1,2})\s*\)?\s*(hari|malam|org|orang|kali)", ur, re.I)
         i["vol"] = int(h.group(1)) if h else None
         i["satuan_nilai"] = i["jumlah"] // i["vol"] if i["vol"] else None
-        tj = re.search(r"di\s+([A-Z][A-Za-z ]+?)\s*(?:\(|$)", ur); i["tujuan"] = tj.group(1).strip() if tj else None
+        tj = re.search(r"di\s*((?:Prov\.?\s*)?[A-Z][A-Za-z.\- ]+?)\s*(?:\(|\d|$)", ur) if i["pos"] == "harian" else None
+        i["tujuan"] = tj.group(1).strip(" .-") if tj else None
         i["persen"] = int(re.search(r"(\d{1,3})\s*%", ur).group(1)) if re.search(r"(\d{1,3})\s*%", ur) else None
     tg = tanggal(" ".join(t[0] for t in toks[:12]))
     nama = None
